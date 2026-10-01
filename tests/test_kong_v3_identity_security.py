@@ -3,6 +3,9 @@ from __future__ import annotations
 import copy
 import importlib.util
 import sys
+import shutil
+
+import yaml
 from pathlib import Path
 
 import pytest
@@ -230,3 +233,36 @@ def test_runtime_apply_cannot_be_enabled(documents):
     bad_policy = copy.deepcopy(policy)
     bad_policy["v3MiddlewareSecurityAuthority"]["runtimeApplyAuthorized"] = True
     expect_failure(profiles, bad_policy, "must not authorize runtime apply")
+
+
+@pytest.mark.parametrize("environment,plugin_name,field", [
+    ("production", "openid-connect", "roles_required"),
+    ("production", "openid-connect", "groups_required"),
+    ("staging", "post-function", "access"),
+])
+def test_generated_identity_gate_drift_fails(tmp_path, environment, plugin_name, field):
+    contract = Path("config/middleware-public-api-route-contract.v1.json")
+    target = tmp_path / contract
+    target.parent.mkdir(parents=True)
+    shutil.copyfile(ROOT / contract, target)
+    for env, relative in (
+        ("production", "config/kong-middleware-routes.production.yml"),
+        ("staging", "config/staging/kong-middleware-routes.staging.yml"),
+    ):
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, target)
+        if env == environment:
+            data = yaml.safe_load(target.read_text())
+            route = next(route for route in data["services"][0]["routes"]
+                         if any(plugin["name"] == plugin_name and field in plugin["config"]
+                                for plugin in route["plugins"]))
+            plugin = next(plugin for plugin in route["plugins"] if plugin["name"] == plugin_name)
+            plugin["config"].pop(field)
+            target.write_text(yaml.safe_dump(data, sort_keys=False))
+    with pytest.raises(validator.IdentitySecurityError, match="identity gate drift"):
+        validator.validate_generated_manifests(tmp_path)
+
+
+def test_generated_identity_gates_match_contract():
+    validator.validate_generated_manifests()

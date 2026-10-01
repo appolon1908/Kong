@@ -37,7 +37,7 @@ def gateway():
         },
         client = {
           get_credential = function() return state.authenticated and {} or nil end,
-          get_consumer = function() return nil end
+          get_consumer = function() return state.authenticated and {username = "gateway-client"} or nil end
         },
         service = {request = {
           clear_header = function(name) state.upstream[name] = nil end,
@@ -58,7 +58,8 @@ def handler(lua, name):
 
 def token(claims):
     payload = base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip("=")
-    return "Bearer e30." + payload + ".c2lnbmF0dXJl"
+    header = base64.urlsafe_b64encode(json.dumps({"alg": "RS256", "kid": "fixture-key"}).encode()).decode().rstrip("=")
+    return "Bearer " + header + "." + payload + ".c2lnbmF0dXJl"
 
 
 def claims():
@@ -211,5 +212,103 @@ def test_nonfinite_token_time_is_rejected(gateway, value):
     data["exp"] = value
     plugin = handler(gateway, "codestra-authz")
     gateway.globals().state.headers["authorization"] = token(data)
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status == 401
+
+@pytest.mark.parametrize("name", ["X-User-ID", "X-Username", "X-Email", "X-Roles", "X-Scopes",
+    "X-Authenticated-UserID", "X-Authenticated-User", "X-Authenticated-Tenant",
+    "X-Authenticated-Campaign", "X-Authenticated-Role", "X-Codestra-Gateway-Secret",
+    "X-Internal-Service", "X-Admin", "X-Codestra-Contract-Operation",
+    "X-Codestra-Expected-Azp", "X-Codestra-Required-Scope"])
+def test_context_strips_all_identity_authority_headers(gateway, name):
+    plugin = handler(gateway, "codestra-request-context")
+    gateway.globals().state.upstream[name] = "forged"
+    plugin.access(plugin, gateway.table_from({"require_correlation_id": False}))
+    assert gateway.globals().state.upstream[name] is None
+
+
+def test_optional_nbf_does_not_reject_valid_keycloak_token(gateway):
+    data = claims()
+    del data["nbf"]
+    gateway.globals().state.headers["authorization"] = token(data)
+    plugin = handler(gateway, "codestra-authz")
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status is None
+
+
+@pytest.mark.parametrize("iat,exp", [(NOW - 301, NOW + 1), (NOW - 60, NOW - 60)])
+def test_invalid_or_overlong_token_lifetime_denied(gateway, iat, exp):
+    data = claims()
+    data.update(iat=iat, exp=exp)
+    gateway.globals().state.headers["authorization"] = token(data)
+    plugin = handler(gateway, "codestra-authz")
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status == 401
+
+
+def test_bearer_failure_has_standard_challenge(gateway):
+    gateway.globals().state.authenticated = False
+    plugin = handler(gateway, "codestra-authz")
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status == 401
+    assert gateway.globals().state.response["WWW-Authenticate"] == 'Bearer realm="codestra", error="invalid_token"'
+
+
+@pytest.mark.parametrize("scope", [None, [], {}, 42, "*", "gateway.reading"])
+def test_missing_or_invalid_scope_never_authorizes(gateway, scope):
+    data = claims()
+    data["scope"] = scope
+    gateway.globals().state.headers["authorization"] = token(data)
+    plugin = handler(gateway, "codestra-authz")
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status == 403
+
+
+@pytest.mark.parametrize("secret", ["short", "{vault://env/kong-webhook-unresolved}"])
+def test_webhook_key_failure_is_closed(gateway, secret):
+    plugin = handler(gateway, "codestra-webhook-verifier")
+    conf = webhook(gateway)
+    conf.secret = secret
+    plugin.access(plugin, conf)
+    assert gateway.globals().state.status == 503
+
+def test_other_authentication_credential_cannot_substitute_for_oidc_consumer(gateway):
+    gateway.globals().state.headers["authorization"] = token(claims())
+    gateway.execute("kong.client.get_consumer = function() return nil end")
+    plugin = handler(gateway, "codestra-authz")
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status == 401
+
+
+def test_consumer_must_match_verified_token_azp(gateway):
+    gateway.globals().state.headers["authorization"] = token(claims())
+    gateway.execute('kong.client.get_consumer = function() return {username="another-client"} end')
+    plugin = handler(gateway, "codestra-authz")
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status == 403
+
+
+def test_tenant_quota_identity_is_minted_only_after_authorization(gateway):
+    plugin = handler(gateway, "codestra-authz")
+    gateway.globals().state.headers["authorization"] = token(claims())
+    gateway.globals().state.headers["X-Codestra-Tenant"] = "forged"
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().kong.ctx.shared.codestra_authenticated_tenant == "tenant-1"
+    gateway.globals().state.authenticated = False
+    plugin.access(plugin, auth_config(gateway))
+    assert gateway.globals().state.status == 401
+    assert gateway.globals().kong.ctx.shared.codestra_authenticated_tenant is None
+
+
+@pytest.mark.parametrize("algorithm", ["none", "HS256", "RS512", None])
+def test_only_contracted_rs256_tokens_allowed(gateway, algorithm):
+    header = {"kid": "fixture-key"}
+    if algorithm:
+        header["alg"] = algorithm
+    encoded = base64.urlsafe_b64encode(json.dumps(header).encode()).decode().rstrip("=")
+    auth = token(claims()).split(".")
+    auth[0] = "Bearer " + encoded
+    gateway.globals().state.headers["authorization"] = ".".join(auth)
+    plugin = handler(gateway, "codestra-authz")
     plugin.access(plugin, auth_config(gateway))
     assert gateway.globals().state.status == 401

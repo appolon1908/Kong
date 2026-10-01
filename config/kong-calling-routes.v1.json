@@ -74,7 +74,7 @@
     },
     {
       "name": "codestra-calling-operation-read",
-      "path": "~^/v1/telephony/operations/[0-9a-fA-F-]{36}$",
+      "path": "~/v1/telephony/operations/[0-9a-fA-F-]{36}$",
       "methods": ["GET"],
       "requiredScope": "telephony:status",
       "idempotencyRequired": false,
@@ -82,7 +82,7 @@
     },
     {
       "name": "codestra-calling-operation-cancel",
-      "path": "~^/v1/telephony/operations/[0-9a-fA-F-]{36}/cancel$",
+      "path": "~/v1/telephony/operations/[0-9a-fA-F-]{36}/cancel$",
       "methods": ["POST"],
       "requiredScope": "telephony:command",
       "idempotencyRequired": true,
@@ -90,7 +90,7 @@
     },
     {
       "name": "codestra-calling-operation-reconcile",
-      "path": "~^/v1/telephony/operations/[0-9a-fA-F-]{36}/reconcile$",
+      "path": "~/v1/telephony/operations/[0-9a-fA-F-]{36}/reconcile$",
       "methods": ["POST"],
       "requiredScope": "telephony:status",
       "idempotencyRequired": true,

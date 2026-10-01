@@ -1,0 +1,4 @@
+config/kong-canonical-middleware-routes.json text eol=lf
+config/kong-middleware-authority.v2.json text eol=lf
+config/kong-middleware-routes.production.yml text eol=lf
+config/staging/kong-middleware-routes.staging.yml text eol=lf

@@ -1,0 +1,324 @@
+{
+  "schema": "codestra.kong.mcr-routes.v1",
+  "mission": "MCR-J",
+  "runtimeApplyAuthorized": false,
+  "productionEffectsAuthorized": false,
+  "canonicalHost": "api.codestra.co",
+  "service": {
+    "host": "middleware-integration-api",
+    "port": 8095,
+    "protocol": "http"
+  },
+  "routingBoundary": {
+    "directProviderRoutingForbidden": true,
+    "directPublicMiddlewareExposureForbidden": true,
+    "internalAndMetricsPublicForbidden": true,
+    "stripPath": false,
+    "preserveHost": true
+  },
+  "headerPolicy": {
+    "authorization": "preserve",
+    "requiredHeadersEnforcedUpstream": true,
+    "requiredHeadersEnforcedAtGateway": true,
+    "correlation": {
+      "header": "X-Correlation-ID",
+      "callerSupplied": "required",
+      "echoDownstream": true
+    },
+    "idempotency": {
+      "header": "Idempotency-Key",
+      "preserve": true,
+      "gatewayRetries": 0,
+      "replayAuthority": "middleware"
+    },
+    "gatewayErrors": {
+      "contentType": "application/json",
+      "body": "{\"error\": <code>}",
+      "echoCorrelationId": true,
+      "missingHeaderStatus": 400,
+      "missingHeaderCodes": {
+        "X-Tenant-ID": "tenant_id_required",
+        "X-Correlation-ID": "correlation_id_required",
+        "Idempotency-Key": "idempotency_key_required",
+        "X-Codestra-Event-ID": "event_id_required",
+        "X-Codestra-Timestamp": "event_timestamp_required",
+        "X-Codestra-Signature": "event_signature_required"
+      },
+      "unmatchedStatus": 404
+    },
+    "clearUntrustedIdentityHeaders": [
+      "X-User-ID",
+      "X-Username",
+      "X-Email",
+      "X-Roles",
+      "X-Scopes",
+      "X-Authenticated-UserID",
+      "X-Authenticated-User",
+      "X-Authenticated-Client",
+      "X-Authenticated-Subject",
+      "X-Authenticated-Tenant",
+      "X-Authenticated-Campaign",
+      "X-Authenticated-Role",
+      "X-Authenticated-Email",
+      "X-Codestra-Tenant",
+      "X-Codestra-Scopes",
+      "X-Codestra-Gateway-Secret",
+      "X-Internal-Service",
+      "X-Admin",
+      "X-Codestra-Contract-Operation",
+      "X-Codestra-Expected-Azp",
+      "X-Codestra-Required-Scope"
+    ],
+    "doNotStrip": [
+      "Authorization",
+      "X-Tenant-ID",
+      "X-Correlation-ID",
+      "Idempotency-Key",
+      "X-Codestra-Event-ID",
+      "X-Codestra-Timestamp",
+      "X-Codestra-Signature",
+      "X-Causation-ID"
+    ]
+  },
+  "limits": {
+    "requestBodyBytes": 1048576,
+    "rateLimitAuthority": "kong",
+    "businessAuthorizationAuthority": "middleware",
+    "requestBodyMb": 1,
+    "rateLimitPerMinute": 120
+  },
+  "routes": [
+    {
+      "name": "mcr-plan",
+      "host": "api.codestra.co",
+      "method": "POST",
+      "pathTemplate": "/platform/v1/campaign-engine/plan",
+      "pathRegex": "~/platform/v1/campaign\\-engine/plan$",
+      "requiredScope": "campaign.engine.plan",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "none",
+      "probePath": "/platform/v1/campaign-engine/plan"
+    },
+    {
+      "name": "mcr-execute",
+      "host": "api.codestra.co",
+      "method": "POST",
+      "pathTemplate": "/platform/v1/campaign-engine/execute",
+      "pathRegex": "~/platform/v1/campaign\\-engine/execute$",
+      "requiredScope": "campaign.engine.execute",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID",
+        "Idempotency-Key"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "hard_denied_by_middleware",
+      "probePath": "/platform/v1/campaign-engine/execute"
+    },
+    {
+      "name": "mcr-journey",
+      "host": "api.codestra.co",
+      "method": "GET",
+      "pathTemplate": "/platform/v1/leads/{lead_id}/journey",
+      "pathRegex": "~/platform/v1/leads/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/journey$",
+      "requiredScope": "leads.journey.read",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "none",
+      "probePath": "/platform/v1/leads/LEAD-TEST-SYN/journey"
+    },
+    {
+      "name": "mcr-next-action",
+      "host": "api.codestra.co",
+      "method": "GET",
+      "pathTemplate": "/platform/v1/leads/{lead_id}/next-action",
+      "pathRegex": "~/platform/v1/leads/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/next\\-action$",
+      "requiredScope": "campaign.engine.read",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "none",
+      "probePath": "/platform/v1/leads/LEAD-TEST-SYN/next-action"
+    },
+    {
+      "name": "mcr-eligible-leads",
+      "host": "api.codestra.co",
+      "method": "GET",
+      "pathTemplate": "/platform/v1/campaigns/{campaign_id}/eligible-leads",
+      "pathRegex": "~/platform/v1/campaigns/(?:klyrow|whatsapp):[A-Za-z0-9][A-Za-z0-9._-]{0,199}/eligible\\-leads$",
+      "requiredScope": "campaign.engine.read",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "none",
+      "probePath": "/platform/v1/campaigns/klyrow:CAMP-TEST-SYN/eligible-leads"
+    },
+    {
+      "name": "mcr-delivery-events",
+      "host": "api.codestra.co",
+      "method": "POST",
+      "pathTemplate": "/platform/v1/delivery-events",
+      "pathRegex": "~/platform/v1/delivery\\-events$",
+      "requiredScope": "campaign.delivery_events.publish",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID",
+        "Idempotency-Key",
+        "X-Codestra-Event-ID",
+        "X-Codestra-Timestamp",
+        "X-Codestra-Signature"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "middleware_owned",
+      "probePath": "/platform/v1/delivery-events"
+    },
+    {
+      "name": "mcr-suppressions",
+      "host": "api.codestra.co",
+      "method": "POST",
+      "pathTemplate": "/platform/v1/suppressions",
+      "pathRegex": "~/platform/v1/suppressions$",
+      "requiredScope": "campaign.suppressions.write",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID",
+        "Idempotency-Key"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "middleware_owned",
+      "probePath": "/platform/v1/suppressions"
+    },
+    {
+      "name": "mcr-status",
+      "host": "api.codestra.co",
+      "method": "GET",
+      "pathTemplate": "/platform/v1/campaign-engine/status",
+      "pathRegex": "~/platform/v1/campaign\\-engine/status$",
+      "requiredScope": "campaign.engine.read",
+      "requiredHeaders": [
+        "X-Tenant-ID",
+        "X-Correlation-ID"
+      ],
+      "serviceHost": "middleware-integration-api",
+      "servicePort": 8095,
+      "stripPath": false,
+      "preserveHost": true,
+      "requiredPlugins": [
+        "pre-function",
+        "openid-connect",
+        "post-function",
+        "correlation-id",
+        "rate-limiting",
+        "request-size-limiting"
+      ],
+      "effects": "none",
+      "probePath": "/platform/v1/campaign-engine/status"
+    }
+  ],
+  "identity": {
+    "audience": "middleware-api",
+    "authMethods": [
+      "bearer"
+    ],
+    "consumerClaim": "azp",
+    "issuers": {
+      "production": "https://auth.codestra.co/realms/codestra",
+      "staging": "https://auth-staging.codestra.co/realms/codestra"
+    },
+    "azpAuthority": "middleware"
+  },
+  "privateSurfacesDenied": [
+    "/internal/",
+    "/metrics",
+    "/api/v1/integration/automation-results",
+    "/api/v1/integration/campaigns/actual-state"
+  ]
+}

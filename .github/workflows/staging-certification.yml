@@ -66,6 +66,8 @@ jobs:
       - name: Validate source authority without live mutation
         run: |
           set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends redis-server
           python3 -m pip install --disable-pip-version-check --no-input pytest PyYAML -r tools/gateway-test-requirements.txt
           pytest -q
           python3 tools/generate_migration_manifests.py --check

@@ -30,7 +30,7 @@ def test_example_compiles_to_guarded_upstream(contract):
     plugins = {p["name"]: p["config"] for p in route["plugins"]}
     assert output["runtime_certified"] is False
     assert output["runtime_apply_authorized"] is False
-    assert route["paths"] == ["~^/api/v2/account/bootstrap$"]
+    assert route["paths"] == ["~/api/v2/account/bootstrap$"]
     assert route["protocols"] == ["https"]
     assert route["methods"] == ["OPTIONS", "POST"]
     assert service["tls_verify"] is True
@@ -38,7 +38,7 @@ def test_example_compiles_to_guarded_upstream(contract):
     assert plugins["openid-connect"]["auth_methods"] == ["bearer"]
     assert plugins["openid-connect"]["issuer"] == "https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration"
     assert plugins["codestra-authz"]["issuer"] == "https://auth-staging.codestra.co/realms/codestra"
-    assert output["kong"]["plugins"][0]["name"] == "prometheus"
+    assert "prometheus" in {p["name"] for p in output["kong"]["plugins"]}
     assert plugins["openid-connect"]["bearer_token_param_type"] == ["header"]
     assert plugins["openid-connect"]["cache_tokens_salt"] == "{vault://env/kong-oidc-cache-tokens-salt}"
     assert plugins["codestra-authz"]["scopes"] == ["moneybee.account.bootstrap"]
@@ -124,6 +124,10 @@ def test_public_health_cannot_require_a_caller_correlation_id(contract):
     ("/", "/orders", "prefix", True),
 ])
 def test_route_collision_semantics(contract, left, right, match, collides):
+    # Private authority makes '/' admissible; test collision handling separately
+    # from the public private-surface rejection boundary.
+    contract["spec"]["exposure"] = "private"
+    contract["spec"]["policies"]["sourceAllowlist"] = ["10.20.30.0/24"]
     second = copy.deepcopy(contract)
     second["metadata"]["id"] = "second-integration"
     contract["spec"]["routes"][0].update(path=left, match=match)
@@ -278,3 +282,44 @@ def test_cli_validates_and_refuses_overwrite(tmp_path):
     before = target.read_bytes()
     assert subprocess.run(args, capture_output=True).returncode == 2
     assert target.read_bytes() == before
+
+def test_oidc_verification_cache_and_mapping_are_explicit(contract):
+    route = compiled(contract)["kong"]["services"][0]["routes"][0]
+    oidc = next(p["config"] for p in route["plugins"] if p["name"] == "openid-connect")
+    assert oidc["issuers_allowed"] == [contract["spec"]["authentication"]["issuer"]]
+    assert oidc["verify_signature"] is True and oidc["verify_claims"] is True
+    assert oidc["consumer_optional"] is False and oidc["consumer_by"] == ["username"]
+    assert oidc["cache_ttl"] == 300 and oidc["cache_ttl_max"] == 300
+    assert oidc["rediscovery_lifetime"] == 30 and oidc["leeway"] == 0
+    assert not oidc.get("anonymous") and not oidc.get("extra_jwks_uris")
+
+
+def test_oidc_requires_all_route_scopes_at_authentication(contract):
+    contract["spec"]["authentication"]["scopes"] = ["moneybee.account.bootstrap", "webhook.receive"]
+    contract["spec"]["routes"][0]["scopes"] = ["moneybee.account.bootstrap", "webhook.receive"]
+    route = compiled(contract)["kong"]["services"][0]["routes"][0]
+    oidc = next(p["config"] for p in route["plugins"] if p["name"] == "openid-connect")
+    assert oidc["scopes_required"] == ["moneybee.account.bootstrap webhook.receive"]
+
+
+@pytest.mark.parametrize("profile", [None, "unknown", ""])
+def test_missing_unknown_security_profile_denied(contract, profile):
+    if profile is None:
+        del contract["spec"]["authentication"]
+    else:
+        contract["spec"]["authentication"]["template"] = profile
+    with pytest.raises(ContractError):
+        compiled(contract)
+
+
+@pytest.mark.parametrize("ca,networks,exposure", [([], ["10.20.0.0/24"], "private"),
+    (["not-a-cert"], ["10.20.0.0/24"], "private"),
+    (["12345678-1234-1234-1234-123456789abc"], [], "private"),
+    (["12345678-1234-1234-1234-123456789abc"], ["10.20.0.0/24"], "public")])
+def test_mtls_missing_trust_or_private_boundary_denied(contract, ca, networks, exposure):
+    spec = contract["spec"]
+    spec["authentication"].update(template="private-mtls-api", caCertificateIds=ca)
+    spec["exposure"] = exposure
+    spec["policies"]["sourceAllowlist"] = networks
+    with pytest.raises(ContractError):
+        compiled(contract)

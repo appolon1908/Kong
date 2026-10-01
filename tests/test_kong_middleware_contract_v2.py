@@ -61,7 +61,7 @@ def test_vendored_contract_hash_and_complete_route_generation():
         assert row["serviceHost"] == "middleware-integration-api", key
         assert row["servicePort"] == 8095, key
         assert row["methods"] == [expected[key]["method"]], key
-        assert row["paths"][0].startswith("~^") and row["paths"][0].endswith("$"), key
+        assert row["paths"][0].startswith("~/") and row["paths"][0].endswith("$"), key
         assert {
             "openid-connect",
             "post-function",
@@ -98,7 +98,11 @@ def test_staging_and_production_declarative_manifests_are_separate_and_safe():
         manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
         assert manifest["_format_version"] == "3.0"
         # decK rejects unknown top-level keys; generation metadata lives in tags.
-        assert set(manifest) == {"_format_version", "_transform", "services", "routes"}
+        assert set(manifest) == {"_format_version", "_transform", "services", "routes", "plugins", "upstreams"}
+        assert manifest["plugins"] == [{"name": "codestra-private-surface", "config": {"allow_private": False}}]
+        assert len(manifest["upstreams"]) == 1
+        assert manifest["upstreams"][0]["name"] == "middleware-integration-api"
+        assert manifest["upstreams"][0]["targets"] == [{"target": "middleware-integration-api:8095", "weight": 100}]
         service = manifest["services"][0]
         assert (service["host"], service["port"]) == ("middleware-integration-api", 8095)
         assert f"codestra.environment.{environment}" in service["tags"]

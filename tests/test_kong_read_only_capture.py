@@ -26,11 +26,15 @@ def metadata():
 
 
 def test_compose_admin_container_loopback_without_host_publication():
-    service = yaml.safe_load((ROOT / 'deploy/kong/compose.kong.yaml').read_text())['services']['kong-gateway']
+    service = yaml.safe_load((ROOT / 'deploy/gateway-platform/compose.hybrid.yaml').read_text())['services']['kong-cp']
     assert service['environment']['KONG_ADMIN_LISTEN'] == '127.0.0.1:8001'
     assert service['environment']['KONG_ADMIN_GUI_LISTEN'] == 'off'
-    assert service['ports'] == ['127.0.0.1:8000:8000']
-    assert service['networks']['codestra_backend'] == {}
+    assert not service.get('ports')
+    assert service['environment']['KONG_PROXY_LISTEN'] == 'off'
+    data_plane = yaml.safe_load((ROOT / 'deploy/kong/compose.kong.yaml').read_text())['services']['kong-gateway']
+    assert data_plane['environment']['KONG_ADMIN_LISTEN'] == 'off'
+    assert data_plane['ports'] == ['127.0.0.1:8000:8000']
+    assert data_plane['networks']['codestra_backend'] == {}
 
 
 @pytest.mark.parametrize('change', [
@@ -161,3 +165,19 @@ def test_cli_failure_sanitizes_raw_errors(monkeypatch, tmp_path, capsys):
     assert capture.main() == 2
     assert capsys.readouterr().out == 'KONG_READ_ONLY_BASELINE=FAIL\n'
     assert not (tmp_path/'result.json').exists()
+
+def test_hybrid_control_plane_is_accepted_by_capture_validator(monkeypatch):
+    capture = module()
+    info = metadata()
+    info["service"] = "kong-cp"
+    monkeypatch.setattr(capture, "run_json", lambda args: info)
+    assert capture.verify_container("codestra-gateway-hybrid-kong-cp-1") == "a" * 64
+
+def test_hybrid_data_plane_is_rejected_by_capture_validator(monkeypatch):
+    capture = module()
+    info = metadata()
+    info["service"] = "kong-dp-1"
+    info["listeners"] = ["KONG_ADMIN_LISTEN=off", "KONG_ADMIN_GUI_LISTEN=off", None]
+    monkeypatch.setattr(capture, "run_json", lambda args: info)
+    with pytest.raises(capture.CaptureError):
+        capture.verify_container("codestra-gateway-hybrid-kong-dp-1")

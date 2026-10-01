@@ -1,0 +1,492 @@
+_format_version: '3.0'
+_transform: true
+routes:
+- name: mcr-plan
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/campaign\-engine/plan$
+  regex_priority: 4
+  methods:
+  - POST
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.none
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - campaign.engine.plan
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-plan\"\nlocal required_scope = \"campaign.engine.plan\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+- name: mcr-execute
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/campaign\-engine/execute$
+  regex_priority: 4
+  methods:
+  - POST
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.hard_denied_by_middleware
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}, {\"Idempotency-Key\", \"idempotency_key_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - campaign.engine.execute
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-execute\"\nlocal required_scope = \"campaign.engine.execute\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+- name: mcr-journey
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/leads/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/journey$
+  regex_priority: 4
+  methods:
+  - GET
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.none
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - leads.journey.read
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-journey\"\nlocal required_scope = \"leads.journey.read\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+- name: mcr-next-action
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/leads/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/next\-action$
+  regex_priority: 4
+  methods:
+  - GET
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.none
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - campaign.engine.read
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-next-action\"\nlocal required_scope = \"campaign.engine.read\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+- name: mcr-eligible-leads
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/campaigns/(?:klyrow|whatsapp):[A-Za-z0-9][A-Za-z0-9._-]{0,199}/eligible\-leads$
+  regex_priority: 4
+  methods:
+  - GET
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.none
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - campaign.engine.read
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-eligible-leads\"\nlocal required_scope = \"campaign.engine.read\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+- name: mcr-delivery-events
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/delivery\-events$
+  regex_priority: 3
+  methods:
+  - POST
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.middleware_owned
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}, {\"Idempotency-Key\", \"idempotency_key_required\"}, {\"X-Codestra-Event-ID\", \"event_id_required\"}, {\"X-Codestra-Timestamp\", \"event_timestamp_required\"}, {\"X-Codestra-Signature\", \"event_signature_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n\
+        \    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - campaign.delivery_events.publish
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-delivery-events\"\nlocal required_scope = \"campaign.delivery_events.publish\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+- name: mcr-suppressions
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/suppressions$
+  regex_priority: 3
+  methods:
+  - POST
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.middleware_owned
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}, {\"Idempotency-Key\", \"idempotency_key_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - campaign.suppressions.write
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-suppressions\"\nlocal required_scope = \"campaign.suppressions.write\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+- name: mcr-status
+  service: middleware-integration-api
+  hosts:
+  - api.codestra.co
+  paths:
+  - ~/platform/v1/campaign\-engine/status$
+  regex_priority: 4
+  methods:
+  - GET
+  protocols:
+  - http
+  strip_path: false
+  preserve_host: true
+  path_handling: v0
+  tags:
+  - codestra.contract.kong-mcr-routes
+  - codestra.runtime-apply-authorized.false
+  - codestra.mcr.effects.none
+  plugins:
+  - name: pre-function
+    config:
+      access:
+      - "-- Generated MCR required-header guard (raw request metadata only).\n-- Echo the caller's correlation id only when it is a safe identifier,\n-- the same rule codestra-request-context applies, so it is never reflected raw.\nlocal response_headers = { [\"Content-Type\"] = \"application/json\" }\nlocal correlation = kong.request.get_header(\"X-Correlation-ID\")\nif type(correlation) == \"string\" and #correlation <= 128\n    and correlation:match(\"^[A-Za-z0-9][A-Za-z0-9._:-]*$\") then\n  response_headers[\"X-Correlation-ID\"] = correlation\nend\nfor _, pair in ipairs({{\"X-Tenant-ID\", \"tenant_id_required\"}, {\"X-Correlation-ID\", \"correlation_id_required\"}}) do\n  local value = kong.request.get_header(pair[1])\n  if type(value) ~= \"string\" or value == \"\" then\n    return kong.response.exit(400, { error = pair[2] }, response_headers)\n  end\nend"
+  - name: openid-connect
+    config:
+      issuer: https://auth-staging.codestra.co/realms/codestra/.well-known/openid-configuration
+      auth_methods:
+      - bearer
+      audience:
+      - middleware-api
+      scopes_required:
+      - campaign.engine.read
+      consumer_claim:
+      - azp
+      cache_tokens_salt: '{vault://env/kong-oidc-cache-tokens-salt}'
+  - name: post-function
+    config:
+      access:
+      - "-- Generated fail-closed MCR authorization metadata.\nlocal operation_id = \"mcr-status\"\nlocal required_scope = \"campaign.engine.read\"\n-- Strip client-asserted identity before minting trusted contract metadata;\n-- X-Consumer-* are set by openid-connect after signature verification.\nfor _, name in ipairs({\"X-User-ID\", \"X-Username\", \"X-Email\", \"X-Roles\", \"X-Scopes\", \"X-Authenticated-UserID\", \"X-Authenticated-User\", \"X-Authenticated-Client\", \"X-Authenticated-Subject\", \"X-Authenticated-Tenant\", \"X-Authenticated-Campaign\", \"X-Authenticated-Role\", \"X-Authenticated-Email\", \"X-Codestra-Tenant\", \"X-Codestra-Scopes\", \"X-Codestra-Gateway-Secret\", \"X-Internal-Service\", \"X-Admin\", \"X-Codestra-Contract-Operation\", \"X-Codestra-Expected-Azp\", \"X-Codestra-Required-Scope\"}) do\n  kong.service.request.clear_header(name)\nend\nkong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)\nkong.service.request.set_header('X-Codestra-Required-Scope',\
+        \ required_scope)\n-- Middleware owns azp, tenant/resource ownership, idempotency replay and effects."
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      fault_tolerant: false
+      hide_client_headers: false
+      redis:
+        host: codestra-redis
+        port: 6379
+        database: 0
+        timeout: 2000
+        password: '{vault://env/kong-rate-limit-redis-password}'
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes

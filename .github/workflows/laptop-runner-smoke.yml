@@ -1,0 +1,76 @@
+name: Kong laptop runner smoke
+
+on:
+  push:
+    branches:
+      - "ci/pas255-*"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kong-laptop-runner-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  laptop-runner-smoke:
+    name: laptop-runner-smoke
+    runs-on: [self-hosted, Windows, X64, codestra-ci-laptop]
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+
+      - name: Verify runner identity and exact checkout
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $head = (git rev-parse HEAD).Trim()
+          if ($head -ne "${{ github.sha }}") {
+            throw "Checkout SHA mismatch: expected ${{ github.sha }}, got $head"
+          }
+          $dirty = git status --porcelain
+          if ($dirty) {
+            throw "Checkout is unexpectedly dirty: $dirty"
+          }
+          if ($env:RUNNER_NAME -ne "appolon-laptop-kong") {
+            throw "Unexpected runner name: $env:RUNNER_NAME"
+          }
+          if ($env:RUNNER_OS -ne "Windows") {
+            throw "Unexpected runner OS: $env:RUNNER_OS"
+          }
+          if ($env:RUNNER_ARCH -ne "X64") {
+            throw "Unexpected runner architecture: $env:RUNNER_ARCH"
+          }
+          Write-Host "RUNNER_NAME=$env:RUNNER_NAME"
+          Write-Host "RUNNER_OS=$env:RUNNER_OS"
+          Write-Host "RUNNER_ARCH=$env:RUNNER_ARCH"
+
+      - name: Verify service-safe toolchain
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          git --version
+          node --version
+          Write-Host $PSVersionTable.PSVersion.ToString()
+
+      - name: Confirm protected workflow files are present
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $required = @(
+            ".github/workflows/validate.yml",
+            ".github/workflows/kong-config.yml",
+            ".github/workflows/security.yml"
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path $path)) {
+              throw "Required workflow file missing: $path"
+            }
+          }
+          Write-Host "Required protected workflow files are present."

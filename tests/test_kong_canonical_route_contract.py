@@ -57,7 +57,8 @@ def test_authenticated_middleware_contract_routes_are_canonical():
             "request-size-limiting",
         } <= set(route["requiredPlugins"])
         assert "post-function" in route["requiredPlugins"]
-        assert "pre-function" not in route["requiredPlugins"]
+        # Pre-auth is limited to header stripping; claim guards remain post-auth.
+        assert "pre-function" in route["requiredPlugins"]
 
     assert MANIFEST["runtimeApplyAuthorized"] is False
     assert MANIFEST["providerEffectsEnabled"] is False

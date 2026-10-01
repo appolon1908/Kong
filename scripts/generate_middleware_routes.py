@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,9 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.kong_traffic_policy import middleware_policy, passive_health, resource_guard
 CONTRACT_PATH = ROOT / "config/middleware-public-api-route-contract.v1.json"
 PIN_PATH = ROOT / "config/middleware-public-api-route-contract.sha256"
 CANONICAL_PATH = ROOT / "config/kong-canonical-middleware-routes.json"
@@ -24,6 +28,10 @@ EXPECTED_CONTRACT_DIGEST = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55
 EXPECTED_CLASSIFICATION_COUNTS = {"shared_edge": 105, "denied": 10, "private_only": 2}
 EXPECTED_ROUTE_COUNT = 117
 REQUIRED_PLUGINS = [
+    "codestra-private-surface",
+    "codestra-resource-guard",
+    "codestra-request-context",
+    "pre-function",
     "openid-connect",
     "post-function",
     "correlation-id",
@@ -55,6 +63,9 @@ UNTRUSTED_IDENTITY_HEADERS = (
     "X-Codestra-Gateway-Secret",
     "X-Internal-Service",
     "X-Admin",
+    "X-Codestra-Contract-Operation",
+    "X-Codestra-Expected-Azp",
+    "X-Codestra-Required-Scope",
 )
 
 
@@ -111,7 +122,10 @@ def route_regex(path_template: str) -> str:
         parts.append(PATH_VALUE_PATTERN)
         cursor = match.end()
     parts.append(re.escape(path_template[cursor:]))
-    return "~^" + "".join(parts) + "$"
+    # Kong Gateway 3.14 declarative config requires regex paths to begin with `~/`.
+    # Kong anchors regex route matching at the path start, so preserving the trailing `$`
+    # keeps exact contract matching without the runtime-invalid leading `^`.
+    return "~" + "".join(parts) + "$"
 
 
 def safe_name(operation_id: str) -> str:
@@ -157,6 +171,7 @@ def canonical_route(row: dict[str, Any]) -> dict[str, Any]:
         "servicePort": UPSTREAM_PORT,
         "securityAuthority": "config/kong-middleware-authority.v2.json",
         "requiredPlugins": REQUIRED_PLUGINS,
+        "trafficPolicy": middleware_policy(),
     }
 
 
@@ -187,6 +202,66 @@ def authority_route(row: dict[str, Any], issuer: str) -> dict[str, Any]:
     }
 
 
+def reviewed_concrete_callers(row: dict[str, Any]) -> list[str]:
+    """Only explicit Keycloak caller identities qualify as gateway AZP grants.
+
+    Logical families are selectors, not token clients. They stay closed until a
+    separately reviewed concrete-member authority is available.
+    """
+    authority = json.loads((ROOT / "config/kong-authentication-profiles.v1.json").read_text())
+    callers = authority["v3CallerAuthority"]["callers"]
+    selected = row["calling_client"]
+    selected = selected if isinstance(selected, list) else [selected]
+    if not selected or not all(isinstance(value, str) and
+                               callers.get(value, {}).get("class", "").startswith("CONCRETE_")
+                               for value in selected):
+        return []
+    return sorted(set(selected))
+
+
+def oidc_actor_requirements(row: dict[str, Any]) -> dict[str, list[str]]:
+    authority = json.loads((ROOT / "config/kong-authentication-profiles.v1.json").read_text())
+    policy = authority["v3CallerAuthority"]
+    scope = row["scope"]
+    selected = row["calling_client"]
+    selected = selected if isinstance(selected, list) else [selected]
+    if scope == "platform.command.replay":
+        # The final contract requires a privileged human with role and MFA.
+        return {"roles_claim": ["realm_access", "roles"],
+                "roles_required": ["platform-operator"],
+                "groups_claim": ["amr"], "groups_required": ["mfa"]}
+    if len(selected) != 1:
+        return {}
+    caller = policy["callers"].get(selected[0], {})
+    if caller.get("class") == "CONCRETE_SERVICE_CLIENT":
+        return {"groups_claim": ["amr"], "groups_required": ["client_credentials"]}
+    if caller.get("class") == "CONCRETE_HUMAN_CLIENT":
+        requirements = {}
+        if (caller.get("humanMfaPolicy") == "required" or
+                scope in caller.get("privilegedScopes", []) or
+                scope in policy["tokenPolicy"]["privilegedScopes"]):
+            requirements.update(groups_claim=["amr"], groups_required=["mfa"])
+        if caller.get("requiredRoles"):
+            requirements.update(roles_claim=["realm_access", "roles"],
+                                roles_required=caller["requiredRoles"])
+        return requirements
+    return {}
+
+
+def pre_auth_function() -> str:
+    """Erase client-supplied identity before OIDC mints its consumer headers."""
+    headers = UNTRUSTED_IDENTITY_HEADERS + (
+        "X-Consumer-ID", "X-Consumer-Username", "X-Credential-Identifier", "X-Anonymous-Consumer",
+    )
+    names = ", ".join(json.dumps(name) for name in headers)
+    return "\n".join((
+        "-- Clear client-supplied identity before openid-connect runs.",
+        f"for _, name in ipairs({{{names}}}) do",
+        "  kong.service.request.clear_header(name)",
+        "end",
+    ))
+
+
 def post_function(row: dict[str, Any]) -> str:
     operation_id = json.dumps(row["operation_id"])
     expected_azp_value = row["calling_client"]
@@ -199,6 +274,7 @@ def post_function(row: dict[str, Any]) -> str:
     expected_azp = json.dumps(expected_azp_value)
     required_scope = json.dumps(row["scope"])
     untrusted = ", ".join(json.dumps(name) for name in UNTRUSTED_IDENTITY_HEADERS)
+    allowed = ", ".join(json.dumps(value) for value in reviewed_concrete_callers(row))
     return "\n".join(
         [
             "-- Generated fail-closed authorization metadata.",
@@ -210,6 +286,16 @@ def post_function(row: dict[str, Any]) -> str:
             f"for _, name in ipairs({{{untrusted}}}) do",
             "  kong.service.request.clear_header(name)",
             "end",
+            "-- OIDC has verified the token and mapped its azp to a Kong consumer.",
+            f"local allowed_azps = {{{allowed}}}",
+            "local consumer = kong.client.get_consumer()",
+            "local matched = false",
+            "if consumer and type(consumer.username) == 'string' then",
+            "  for _, azp in ipairs(allowed_azps) do",
+            "    if consumer.username == azp then matched = true break end",
+            "  end",
+            "end",
+            "if not matched then return kong.response.exit(403, {error='unauthorized_caller'}) end",
             "kong.service.request.set_header('X-Codestra-Contract-Operation', operation_id)",
             "kong.service.request.set_header('X-Codestra-Expected-Azp', expected_azp)",
             "kong.service.request.set_header('X-Codestra-Required-Scope', required_scope)",
@@ -221,14 +307,33 @@ def post_function(row: dict[str, Any]) -> str:
 
 def route_plugins(row: dict[str, Any], issuer: str) -> list[dict[str, Any]]:
     return [
+        {"name": "codestra-private-surface", "config": {"allow_private": False}},
+        resource_guard(safe_name(row["operation_id"]), middleware_policy()),
+        {"name": "codestra-request-context", "config": {"require_correlation_id": False}},
+        {"name": "pre-function", "config": {"access": [pre_auth_function()]}},
         {
             "name": "openid-connect",
             "config": {
                 "issuer": issuer + "/.well-known/openid-configuration",
                 "auth_methods": ["bearer"],
                 "audience": [row["audience"]],
+                "audience_required": [row["audience"]],
+                "issuers_allowed": [issuer],
+                "bearer_token_param_type": ["header"],
+                "verify_signature": True,
+                "verify_claims": True,
+                "ssl_verify": True,
+                "consumer_by": ["username"],
+                "consumer_optional": False,
+                "cache_ttl": 300,
+                "cache_ttl_max": 300,
+                "rediscovery_lifetime": 30,
+                "leeway": 0,
                 "scopes_required": [row["scope"]],
                 "consumer_claim": ["azp"],
+                **({"roles_claim": ["azp"], "roles_required": reviewed_concrete_callers(row)}
+                   if reviewed_concrete_callers(row) and "roles_claim" not in oidc_actor_requirements(row) else {}),
+                **oidc_actor_requirements(row),
                 # decK >= 1.66 (the CI-pinned version) refuses to build state
                 # without an explicit salt; the value is a vault reference, never
                 # a literal, exactly as the other reviewed OIDC renderers do.
@@ -248,6 +353,9 @@ def route_plugins(row: dict[str, Any], issuer: str) -> list[dict[str, Any]]:
             "name": "rate-limiting",
             "config": {
                 "minute": 120,
+                "second": 10,
+                "error_code": 429,
+                "error_message": "rate_limit_exceeded",
                 "policy": "redis",
                 "fault_tolerant": False,
                 "hide_client_headers": False,
@@ -306,6 +414,13 @@ def build_manifest(
     return {
         "_format_version": "3.0",
         "_transform": True,
+        "plugins": [{"name": "codestra-private-surface", "config": {"allow_private": False}}],
+        "upstreams": [{"name": UPSTREAM_HOST,
+            "targets": [{"target": f"{UPSTREAM_HOST}:{UPSTREAM_PORT}", "weight": 100}],
+            "healthchecks": {"passive": passive_health(), "active": {
+                "type": "http", "http_path": "/readyz",
+                "healthy": {"interval": 10, "successes": 2},
+                "unhealthy": {"interval": 5, "http_failures": 2, "tcp_failures": 2, "timeouts": 2}}}}],
         "services": [
             {
                 "name": "middleware-integration-api",
@@ -341,6 +456,7 @@ def main() -> None:
 
     canonical = json.loads(CANONICAL_PATH.read_text(encoding="utf-8"))
     canonical["runtimeApplyAuthorized"] = False
+    canonical["globalPlugins"] = ["codestra-private-surface"]
     canonical["providerEffectsEnabled"] = False
     canonical["middlewareEdgeContract"] = {
         "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",

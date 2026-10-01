@@ -135,7 +135,9 @@ def test_intentional_public_routes_are_allowlisted_read_only_or_legacy():
         terminated = "GATEWAY_TERMINATED" in entry["acceptedFindings"]
         assert not mutating or terminated or entry["lifecycle"] in ("LEGACY", "RETIRE_CANDIDATE"), route_id
         if terminated:
-            assert entry["serviceId"] is None and route.upstream_host is None and route.plugins == ("request-termination",)
+            assert entry["serviceId"] is None and route.upstream_host is None
+            # Materialized canonical routes include the inherited global guard.
+            assert set(route.plugins) == {"codestra-private-surface", "request-termination"}
     # the Mission 1 critical finding stays visible: blocked, not public, not resolved
     mail = policy_entry(policy, "codestra-mail-api")
     assert mail["accessClass"] == "ADMIN_INTERNAL" and mail["authenticationProfile"] == "BLOCKED_NONE_V1"
@@ -245,7 +247,7 @@ def test_logging_policy_and_admin_isolation_are_preserved():
     assert logging["logPluginsRegistered"] == []
     assert not {p["plugin"] for p in result["foundation"]["plugins"]} & {"file-log", "http-log", "tcp-log", "udp-log", "syslog"}
     compose = read_yaml(ROOT, "deploy/kong/compose.kong.yaml")["services"]["kong-gateway"]
-    assert compose["environment"]["KONG_ADMIN_LISTEN"] == "127.0.0.1:8001"
+    assert compose["environment"]["KONG_ADMIN_LISTEN"] == "off"
     assert compose["environment"]["KONG_ADMIN_GUI_LISTEN"] == "off"
     assert all(str(p).startswith("127.0.0.1:8000:") for p in compose["ports"])
 
@@ -323,7 +325,7 @@ def test_v2_shared_edge_routes_are_governed_from_the_authority():
             assert {b["source"] for b in entry["bindings"]} == sources and all(b["role"] == "DESIRED" for b in entry["bindings"])
             assert entry["lifecycle"] == "CANONICAL" and entry["activation"] == "SOURCE_CANDIDATE" and entry["mechanism"] == "OIDC_BEARER"
             assert (route.upstream_host, route.upstream_port) == ("middleware-integration-api", 8095)
-            assert route.hosts == ("api.codestra.co",) and route.paths[0].startswith("~^") and route.paths[0].endswith("$")
+            assert route.hosts == ("api.codestra.co",) and route.paths[0].startswith("~/") and route.paths[0].endswith("$")
             assert V2_PLUGINS <= set(route.plugins) and route.issuer == issuer
             assert route.audience == operation["audience"] and route.required_scope == operation["scope"]
             assert route.expected_azp == validator.canonical_azp(operation["azp"])
@@ -365,8 +367,9 @@ def test_denied_aliases_are_fail_closed_404_terminations():
         assert entry["serviceId"] is None and entry["acceptedFindings"] == ["GATEWAY_TERMINATED"]
         assert entry["authentication"] == "PUBLIC" and entry["mechanism"] == "NONE" and entry["deniedStatus"] == 404
         assert entry["lifecycle"] == "CANONICAL" and entry["routeId"] in allow
-        assert route.upstream_host is None and route.upstream_port is None and route.plugins == ("request-termination",)
-        assert route.hosts == ("api.codestra.co",) and route.paths[0].startswith("~^") and "*" not in route.paths[0]
+        assert route.upstream_host is None and route.upstream_port is None
+        assert set(route.plugins) == {"codestra-private-surface", "request-termination"}
+        assert route.hosts == ("api.codestra.co",) and route.paths[0].startswith("~/") and "*" not in route.paths[0]
         assert policy[entry["routeId"]]["authenticationProfile"] == "DENIED_TERMINATION_V1"
         assert policy[entry["routeId"]]["identityPropagation"] == "NONE_TERMINATED"
         templates.add(entry["deniedTemplate"].split("{")[0].rstrip("/"))
@@ -462,7 +465,7 @@ def test_mission1_security_invariants_are_not_regressed():
             route = result["materialized"][entry["routeId"]]
             assert route.methods and route.hosts and route.paths
             assert not {"DIRECT_PROVIDER_UPSTREAM", "HARD_CODED_UPSTREAM_IP", "NO_GATEWAY_AUTHENTICATION"} & set(entry["acceptedFindings"])
-    assert foundation["pluginGovernance"]["globalPluginsAllowed"] == ["prometheus"]
+    assert set(foundation["pluginGovernance"]["globalPluginsAllowed"]) == {"prometheus", "codestra-private-surface"}
 
 
 # --------------------------------------------------------------------------- negative mutations
@@ -685,7 +688,7 @@ def test_wrong_issuer_in_a_generated_manifest_fails(repo, path, issuer, match):
     (lambda c: c.pop("cache_tokens_salt"), "cache_tokens_salt through the vault"),
     (lambda c: c.update(cache_tokens_salt="synthetic-literal-salt"), "cache_tokens_salt through the vault"),
     (lambda c: c.update(anonymous="00000000-0000-0000-0000-000000000000"), "anonymous consumer"),
-    (lambda c: c.update(leeway=3600), "leeway exceeds the bound"),
+    (lambda c: c.update(leeway=3600), "bounded identity cache and rediscovery required"),
 ])
 def test_v2_openid_connect_downgrades_fail(repo, mutate, match):
     document = read_yaml(repo, PROD_YML)

@@ -54,6 +54,12 @@ from urllib.parse import urlsplit
 
 import yaml
 
+try:
+    from scripts.validate_kong_runtime_mode import validate_authority as validate_runtime_authority
+except ModuleNotFoundError:
+    # Direct CLI invocation places scripts/, rather than the repo root, on sys.path.
+    from validate_kong_runtime_mode import validate_authority as validate_runtime_authority
+
 ROOT = Path(__file__).resolve().parents[1]
 FOUNDATION = ROOT / "config/kong-gateway-foundation.v1.json"
 SCHEMA = "codestra.kong.gateway-foundation.v1"
@@ -61,7 +67,7 @@ ACCESS_POLICY = "config/kong-access-policy.v1.json"
 ACCESS_POLICY_SCHEMA = "codestra.kong.access-policy.v1"
 AUTH_PROFILES = "config/kong-authentication-profiles.v1.json"
 AUTH_PROFILES_SCHEMA = "codestra.kong.authentication-profiles.v1"
-FINAL_MIDDLEWARE_SOURCE_SHA = "2862af0aa97367b18cb360af69212abe4243a1ac"
+FINAL_MIDDLEWARE_SOURCE_SHA = "bd406a6508c8095a3f23b35149a2eebcb94c94c6"
 FINAL_MIDDLEWARE_CONTRACT_SHA256 = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
 FINAL_MIDDLEWARE_ROUTE_COUNTS = {"shared_edge": 105, "denied": 10, "private_only": 2}
 CANONICAL_MIDDLEWARE_HOST = "middleware-integration-api"
@@ -357,6 +363,7 @@ def load_production_inventory(path: str, doc: dict) -> SourceDocument:
 
 def load_canonical_middleware_contract(path: str, doc: dict) -> SourceDocument:
     out = SourceDocument(path=path, format="canonical-middleware-contract")
+    out.global_plugins = tuple(sorted(doc.get("globalPlugins", [])))
     for route in doc["contractRoutes"]:
         out.routes[route["name"]] = SourceRoute(
             source=path, name=route["name"], hosts=_tuple(route["hosts"]), paths=_tuple(route["paths"]),
@@ -378,7 +385,8 @@ def load_canonical_middleware_contract(path: str, doc: dict) -> SourceDocument:
         # no upstream); host and transport come from the generated manifest.
         out.routes[route["name"]] = SourceRoute(
             source=path, name=route["name"], paths=(route["path"],), methods=_methods(route["method"]),
-            regex_priority=route.get("regexPriority", 0) or 0, plugins=("request-termination",),
+            regex_priority=route.get("regexPriority", 0) or 0,
+            plugins=tuple(sorted(set(out.global_plugins) | {"request-termination"})),
         )
     return out
 
@@ -1126,7 +1134,14 @@ def validate_source_discovery(foundation: dict, root: Path = ROOT) -> None:
         for match in sorted(root.glob(pattern)):
             if match.is_file():
                 found.add(match.relative_to(root).as_posix())
-    unregistered = sorted(found - registered - set(excluded))
+    # K1 is a typed runtime authority, not a route/plugin manifest. Validate it
+    # rather than silently excluding it from the route-source discovery gate.
+    runtime_path = "config/kong-runtime-config-mode.v1.json"
+    try:
+        validate_runtime_authority(load_json(root / runtime_path))
+    except (ValueError, OSError) as error:
+        raise FoundationError(f"K1 runtime authority invalid: {error}") from error
+    unregistered = sorted(found - registered - set(excluded) - {runtime_path})
     _require(not unregistered, f"unregistered Kong source files (register them in sources[] or exclude with a reason): {unregistered}")
     stale = sorted(set(excluded) - found)
     _require(not stale, f"sourceDiscovery exclusions for files that no longer exist: {stale}")
@@ -1545,12 +1560,14 @@ def validate_node(foundation: dict, root: Path = ROOT) -> None:
     compose = load_yaml(root / node["compose"])
     gateway = compose["services"][node["composeService"]]
     environment = gateway["environment"]
-    _require(environment.get("KONG_ADMIN_LISTEN") == "127.0.0.1:8001", "Admin API must remain container-loopback only")
+    _require(environment.get("KONG_ADMIN_LISTEN") == "off", "Admin API must remain disabled on data planes")
     _require(environment.get("KONG_ADMIN_GUI_LISTEN") == "off", "Kong Manager must remain off")
     ports = [str(p) for p in gateway.get("ports", [])]
     _require(all(p.startswith("127.0.0.1:") for p in ports), "every published port must bind host loopback")
     _require(not any(":8001" in p or ":8100" in p or ":8002" in p for p in ports), "Admin, Manager and Status must not be published")
-    _require(environment.get("KONG_PG_SSL") == "on" and environment.get("KONG_PG_SSL_VERIFY") == "on", "database TLS verification must be enabled")
+    _require(environment.get("KONG_ROLE") == "data_plane" and environment.get("KONG_DATABASE") == "off",
+             "K1 requires a hybrid data plane")
+    _require(not any(key.startswith("KONG_PG_") for key in environment), "data plane database settings forbidden")
     _require("@${KONG_IMAGE_DIGEST:?" in gateway.get("image", ""), "gateway image must use an immutable digest")
     _require(str(environment.get("KONG_TRUSTED_IPS", "")).startswith("${KONG_TRUSTED_IPS:?"), "trusted_ips must be required from the deployment with no default")
     _require(environment.get("KONG_REAL_IP_HEADER") == "X-Forwarded-For" and environment.get("KONG_REAL_IP_RECURSIVE") == "on",
@@ -1568,7 +1585,7 @@ def validate_node(foundation: dict, root: Path = ROOT) -> None:
     _require("healthcheck" in gateway, "a health check is required")
     _require("docker.sock" not in json.dumps(gateway), "the Docker socket must never be mounted")
     _require(not gateway.get("privileged") and not gateway.get("network_mode"), "privileged and host networking are forbidden")
-    for secret in ("kong_license", "kong_database_runtime_password"):
+    for secret in ("kong_license", "cluster_ca", "dp_cert", "dp_key"):
         _require(secret in gateway.get("secrets", []), f"secret {secret} must be mounted as a file")
     for name, definition in compose.get("secrets", {}).items():
         _require(set(definition) == {"file"} and definition["file"].startswith("/etc/codestra/secrets/"), f"secret {name} must be a root-owned host file path")
@@ -1576,7 +1593,13 @@ def validate_node(foundation: dict, root: Path = ROOT) -> None:
         _require(network.get("external") is True, "every network must be an existing external network")
     conf = (root / node["confExample"]).read_text(encoding="utf-8")
     settings = dict(re.findall(r"^([a-z_]+)\s*=\s*(\S+)", conf, flags=re.MULTILINE))
-    for key, expected in node["confMustEqual"].items():
+    # Frozen K1 mode authority supersedes the earlier node's combined DB/Admin
+    # topology only; all route, identity and sandbox foundation policy remains.
+    expected_conf = dict(node["confMustEqual"])
+    expected_conf.pop("pg_ssl", None)
+    expected_conf.pop("pg_ssl_verify", None)
+    expected_conf.update(admin_listen="off", role="data_plane", database="off", cluster_mtls="pki")
+    for key, expected in expected_conf.items():
         _require(settings.get(key) == expected, f"kong.conf.example {key} must be {expected!r} (found {settings.get(key)!r})")
     # env template completeness
     declared = set(re.findall(r"^([A-Z0-9_]+)=", (root / node["runtimeEnvExample"]).read_text(encoding="utf-8"), flags=re.MULTILINE))
@@ -1855,6 +1878,27 @@ def validate_token_settings(documents: dict[str, SourceDocument], profiles: dict
         for plugin in plugin_blocks:
             config = plugin.get("config", {}) or {}
             if plugin.get("name") == "openid-connect":
+                if path in {
+                    "config/kong-middleware-routes.production.yml",
+                    "config/staging/kong-middleware-routes.staging.yml",
+                    "kong/plugins/oidc/keycloak.yml",
+                }:
+                    _require(config.get("verify_signature") is True, f"{path}: token signature verification required")
+                    _require(config.get("verify_claims") is True and config.get("ssl_verify") is True,
+                             f"{path}: claim and TLS verification required")
+                    _require(config.get("audience_required") == config.get("audience"),
+                             f"{path}: token audience enforcement required")
+                    issuer = str(config.get("issuer", "")).removesuffix("/.well-known/openid-configuration")
+                    _require(config.get("issuers_allowed") == [issuer], f"{path}: exact token issuer required")
+                    _require(config.get("consumer_by") == ["username"] and config.get("consumer_optional") is False,
+                             f"{path}: mandatory consumer mapping required")
+                    _require(config.get("bearer_token_param_type") == ["header"],
+                             f"{path}: header-only bearer required")
+                    _require(config.get("cache_ttl") == 300 and config.get("cache_ttl_max") == 300
+                             and config.get("rediscovery_lifetime") == 30 and config.get("leeway") == 0,
+                             f"{path}: bounded identity cache and rediscovery required")
+                    _require(not config.get("extra_jwks_uris") and not config.get("ignore_signature"),
+                             f"{path}: additional identity authority forbidden")
                 _require(str(config.get("cache_tokens_salt", "")).startswith("{vault://env/"), f"{path}: openid-connect must reference cache_tokens_salt through the vault")
                 if document.format == "kong-declarative":
                     _require(bool(config.get("scopes_required")) and all(s not in ("*", "") for s in config["scopes_required"]),

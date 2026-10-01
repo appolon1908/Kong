@@ -9,16 +9,19 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES_PATH = ROOT / "config" / "kong-authentication-profiles.v1.json"
 POLICY_PATH = ROOT / "config" / "kong-access-policy.v1.json"
 
 EXPECTED_MIDDLEWARE_DIGEST = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
-EXPECTED_MIDDLEWARE_COMMIT = "2862af0aa97367b18cb360af69212abe4243a1ac"
+EXPECTED_MIDDLEWARE_COMMIT = "bd406a6508c8095a3f23b35149a2eebcb94c94c6"
 EXPECTED_IDENTITY_SOURCE_COMMIT = "45a487d71a516ae3039b00c250752897469ffe7a"
 EXPECTED_PRODUCTION_ISSUER = "https://auth.codestra.co/realms/codestra"
 EXPECTED_STAGING_ISSUER = "https://auth-staging.codestra.co/realms/codestra"
@@ -442,6 +445,44 @@ def validate(
     }
 
 
+def validate_generated_manifests(root: Path = ROOT) -> None:
+    """Bind deployable identity gates to the pinned Middleware route contract."""
+    spec = importlib.util.spec_from_file_location(
+        "kong_middleware_route_generator", ROOT / "scripts/generate_middleware_routes.py"
+    )
+    require(spec is not None and spec.loader is not None, "route generator unavailable")
+    generator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(generator)
+    route_plugins, safe_name = generator.route_plugins, generator.safe_name
+
+    contract = load_json(root / "config/middleware-public-api-route-contract.v1.json")
+    require(canonical_digest(contract) == EXPECTED_MIDDLEWARE_DIGEST, "Middleware route contract digest drift")
+    shared = [row for row in contract["routes"] if row["classification"] == "shared_edge"]
+    for relative, issuer in (
+        ("config/kong-middleware-routes.production.yml", EXPECTED_PRODUCTION_ISSUER),
+        ("config/staging/kong-middleware-routes.staging.yml", EXPECTED_STAGING_ISSUER),
+    ):
+        try:
+            manifest = yaml.safe_load((root / relative).read_text())
+            routes = manifest["services"][0]["routes"]
+        except (OSError, KeyError, IndexError, TypeError, yaml.YAMLError) as exc:
+            raise IdentitySecurityError(f"{relative}: invalid generated manifest") from exc
+        actual = {route.get("name"): route for route in routes}
+        require(len(actual) == len(routes) == len(shared), f"{relative}: shared route set drift")
+        require(set(actual) == {safe_name(row["operation_id"]) for row in shared},
+                f"{relative}: shared route set drift")
+        for row in shared:
+            name = safe_name(row["operation_id"])
+            plugins = actual[name].get("plugins", [])
+            require(isinstance(plugins, list), f"{relative}: {name} missing identity plugins")
+            identity_names = {"pre-function", "openid-connect", "post-function"}
+            for expected in route_plugins(row, issuer):
+                if expected["name"] not in identity_names:
+                    continue
+                matching = [plugin for plugin in plugins if plugin.get("name") == expected["name"]]
+                require(matching == [expected], f"{relative}: {name} {expected['name']} identity gate drift")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--middleware-contract", type=Path)
@@ -457,6 +498,7 @@ def main() -> int:
         keycloak_callers=args.keycloak_callers,
         keycloak_access=args.keycloak_access,
     )
+    validate_generated_manifests()
     authority = result["securityAuthority"]
     rows = authority["routeSecurity"]
     print("KONG_V3_IDENTITY_SECURITY=PASS")

@@ -11,10 +11,10 @@ by the contract-binding step of `.github/workflows/release.yml` and
 | Field | Value | Rule |
 | --- | --- | --- |
 | registry | `ghcr.io` | GitHub Container Registry only |
-| namespace | `ingtrader21-spec` | `lower(GITHUB_REPOSITORY_OWNER)` of the repository that runs the workflow; a literal owner never appears in a workflow or tool |
+| namespace | `appolon1908` | `lower(GITHUB_REPOSITORY_OWNER)` of the repository that runs the workflow; a literal owner never appears in a workflow or tool |
 | package | `kong-standby-auth` | the standby auth image built from `deploy/kong-production-standby/auth-middleware/Dockerfile` |
-| image | `ghcr.io/ingtrader21-spec/kong-standby-auth` | `registry/namespace/package` |
-| repository | `ingtrader21-spec/Kong` (id `1347790742`) | former name `appolon1908-hue/Kong` is an HTTP 301 redirect; the package namespace follows the current owner |
+| image | `ghcr.io/appolon1908/kong-standby-auth` | `registry/namespace/package` |
+| repository | `appolon1908/Kong` (id `1347790742`) | former names `appolon1908-hue/Kong` and `ingtrader21-spec/Kong` are HTTP 301 redirects; the package namespace follows the current owner |
 
 Why derived, not hard-coded: a repository-scoped `GITHUB_TOKEN` can publish only
 into its owner's namespace. The pre-transfer literal produced

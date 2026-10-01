@@ -51,6 +51,8 @@ jobs:
       - name: Install pinned Python validation dependencies
         run: |
           set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends redis-server
           python -m pip install --disable-pip-version-check --no-input             pytest==8.4.2 PyYAML==6.0.3 -r tools/gateway-test-requirements.txt
 
       - name: Install checksum-verified decK and Gitleaks

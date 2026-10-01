@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "validate_kong_webhook_registry.py"
@@ -61,3 +64,31 @@ def test_registry_does_not_claim_business_or_durable_event_authority() -> None:
     assert "replay state" in denied_ownership
     assert "business database writes" in denied_ownership
     assert "provider retry/reconciliation" in denied_ownership
+
+
+def _caddy_checkout(root: Path, gateway: str) -> Path:
+    config = root / "config"
+    config.mkdir(parents=True)
+    webhook_rows = [
+        {"path": row["path"], "classification": "CANONICAL", "gateway": gateway}
+        for row in REGISTRY["canonical_entries"]
+        if row["id"] in {"odoo-events", "n8n-results"}
+    ]
+    edge_rows = [{"path": "/platform/v1/*", "classification": "CANONICAL", "gateway": gateway}]
+    edge_rows += [
+        {"path": row["path_pattern"], "classification": "DENIED_PENDING_CONTRACT", "expected_public_status": 404}
+        for row in REGISTRY["pending_denied_entries"]
+    ]
+    (config / "webhook-edge-registry.v1.json").write_text(json.dumps({"entries": webhook_rows}))
+    (config / "public-edge-registry.v1.json").write_text(json.dumps({"entries": edge_rows}))
+    return root
+
+
+def test_caddy_handoff_label_is_the_release_contract_repository(tmp_path: Path) -> None:
+    contract = json.loads((ROOT / "config" / "kong-release-registry-contract.v1.json").read_text(encoding="utf-8"))
+    current = contract["repository"]["fullName"]
+    assert webhooks.KONG_REPOSITORY == current == "appolon1908/Kong"
+    webhooks.validate_against_caddy(REGISTRY, _caddy_checkout(tmp_path / "current", current))
+    for former in sorted(row["fullName"] for row in contract["repository"]["formerNames"]):
+        with pytest.raises(webhooks.WebhookError, match="hand off to Kong"):
+            webhooks.validate_against_caddy(REGISTRY, _caddy_checkout(tmp_path / former.replace("/", "_"), former))

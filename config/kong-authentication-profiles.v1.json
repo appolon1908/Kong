@@ -807,7 +807,7 @@
     "runtimeApplyAuthorized": false,
     "middleware": {
       "repository": "ingtrader21-spec/Middleware-",
-      "commit": "2862af0aa97367b18cb360af69212abe4243a1ac",
+      "commit": "bd406a6508c8095a3f23b35149a2eebcb94c94c6",
       "routeContractPath": "deploy/public-api-route-contract.json",
       "routeContractSha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
       "routeCount": 117

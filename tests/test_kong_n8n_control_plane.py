@@ -131,7 +131,8 @@ def test_canonical_manifest_uses_exact_n8n_security_authority():
         assert route["securityAuthority"] == "config/kong-middleware-authority.v2.json"
         assert "openid-connect" in route["requiredPlugins"]
         assert "post-function" in route["requiredPlugins"]
-        assert "pre-function" not in route["requiredPlugins"]
+        # Pre-auth is limited to header stripping; claim guards remain post-auth.
+        assert "pre-function" in route["requiredPlugins"]
 
 
 def test_operations_uuid_path_matches_the_canonical_prefix_route():

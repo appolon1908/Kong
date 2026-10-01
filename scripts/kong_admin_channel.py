@@ -18,9 +18,10 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 
 DOCKER = ["docker", "--host", "unix:///var/run/docker.sock"]
 ADMIN_ORIGIN = "http://127.0.0.1:8001"
+# Historical transport alias; it never selects the legacy data-plane service.
 PRIVATE_ADMIN_URL = "container://kong-gateway"
-DEFAULT_CONTAINER = "codestra-kong-kong-gateway-1"
-COMPOSE_SERVICE = "kong-gateway"
+DEFAULT_CONTAINER = "codestra-gateway-hybrid-kong-cp-1"
+COMPOSE_SERVICE = "kong-cp"
 REQUIRED_LISTENERS = {"KONG_ADMIN_LISTEN=127.0.0.1:8001", "KONG_ADMIN_GUI_LISTEN=off"}
 ADMIN_PORTS = ("8001/tcp", "8444/tcp", "8002/tcp", "8445/tcp")
 METHODS = frozenset({"GET", "POST", "PATCH", "DELETE"})
@@ -49,6 +50,17 @@ INSPECT_FORMAT = (
     '"listeners":[{{range .Config.Env}}'
     '{{if or (eq (index (split . "=") 0) "KONG_ADMIN_LISTEN") '
     '(eq (index (split . "=") 0) "KONG_ADMIN_GUI_LISTEN")}}{{json .}},{{end}}'
+    '{{end}}null]}'
+)
+# Inspect only nonsecret authority fields, in the same snapshot as the runtime
+# identity/listeners. The basic format remains shared with read-only capture.
+MANAGEMENT_INSPECT_FORMAT = INSPECT_FORMAT[:-1] + (
+    ',"project":{{json (index .Config.Labels "com.docker.compose.project")}},'
+    '"runtime":[{{range .Config.Env}}'
+    '{{if or (eq (index (split . "=") 0) "KONG_ROLE") '
+    '(eq (index (split . "=") 0) "KONG_DATABASE") '
+    '(eq (index (split . "=") 0) "KONG_PROXY_LISTEN") '
+    '(eq (index (split . "=") 0) "CODESTRA_TRADITIONAL_APPROVAL")}}{{json .}},{{end}}'
     '{{end}}null]}'
 )
 
@@ -94,16 +106,31 @@ def run_json(argv: list[str]) -> dict:
     return value
 
 
-def verify_container(container: str) -> str:
-    """Return the runtime ID of a running, Admin-isolated gateway container."""
+def verify_container(container: str, *, traditional_approval: str | None = None) -> str:
+    """Select a CP or explicitly approved, isolated Traditional management node."""
     if not isinstance(container, str) or not CONTAINER_NAME.fullmatch(container):
         raise AdminError("invalid kong gateway container name")
-    value = run_json(DOCKER + ["inspect", "--format", INSPECT_FORMAT, container])
+    value = run_json(DOCKER + ["inspect", "--format", MANAGEMENT_INSPECT_FORMAT, container])
     identifier = value.get("id", "")
     if not isinstance(identifier, str) or not IDENTITY.fullmatch(identifier):
         raise AdminError("invalid kong gateway identity")
-    if value.get("running") is not True or value.get("service") != COMPOSE_SERVICE:
-        raise AdminError("selected container is not the running kong gateway")
+    service = value.get("service")
+    if value.get("running") is not True or service not in (COMPOSE_SERVICE, "kong-management"):
+        raise AdminError("selected container is not a running Kong management node")
+    expected_runtime = {"KONG_DATABASE=postgres", "KONG_PROXY_LISTEN=off"}
+    if service == "kong-management":
+        if not isinstance(traditional_approval, str) or not re.fullmatch(r"KONG:[A-Za-z0-9:_-]+", traditional_approval):
+            raise AdminError("traditional management requires explicit KONG fallback approval")
+        expected_project = "codestra-gateway-traditional"
+        expected_runtime.update({"KONG_ROLE=traditional", "CODESTRA_TRADITIONAL_APPROVAL=" + traditional_approval})
+    else:
+        expected_project = "codestra-gateway-hybrid"
+        expected_runtime.add("KONG_ROLE=control_plane")
+    runtime = value.get("runtime")
+    if (value.get("project") != expected_project or not isinstance(runtime, list)
+            or len(runtime) != len(expected_runtime) + 1 or runtime[-1] is not None
+            or {item for item in runtime if isinstance(item, str)} != expected_runtime):
+        raise AdminError("unapproved Kong management role or project")
     mode = value.get("network_mode")
     if not isinstance(mode, str) or mode in {"host", "none"} or mode.startswith("container:"):
         raise AdminError("kong gateway shares a network namespace")
@@ -118,20 +145,20 @@ def verify_container(container: str) -> str:
     return identifier
 
 
-def container_identity(container: str = DEFAULT_CONTAINER) -> str:
+def container_identity(container: str = DEFAULT_CONTAINER, *, traditional_approval: str | None = None) -> str:
     """Resolve the named gateway and reject replacement during this process."""
     previous = _IDENTIFIED.get(container)
-    current = verify_container(container)
+    current = verify_container(container, traditional_approval=traditional_approval)
     if previous is not None and current != previous:
         raise AdminError("kong gateway container changed during the operation")
     _IDENTIFIED[container] = current
     return current
 
 
-def confirm_unchanged(container: str = DEFAULT_CONTAINER) -> str:
+def confirm_unchanged(container: str = DEFAULT_CONTAINER, *, traditional_approval: str | None = None) -> str:
     """Fail if the gateway container was replaced while the operation ran."""
     previous = _IDENTIFIED.get(container)
-    current = verify_container(container)
+    current = verify_container(container, traditional_approval=traditional_approval)
     if previous is not None and current != previous:
         raise AdminError("kong gateway container changed during the operation")
     _IDENTIFIED[container] = current
@@ -299,6 +326,7 @@ def admin_request(
     container: str = DEFAULT_CONTAINER,
     *,
     payload_encoding: str = "json",
+    traditional_approval: str | None = None,
 ):
     """Run one bounded Admin request inside the verified gateway container."""
     if method not in METHODS:
@@ -309,7 +337,7 @@ def admin_request(
     label = f"Kong Admin {method} {urlsplit(path).path}"
     if payload is not None and method == "GET":
         raise AdminError(f"{label}: GET must not carry a body")
-    identifier = container_identity(container)
+    identifier = container_identity(container, traditional_approval=traditional_approval)
     argv = DOCKER + ["exec"]
     body = None
     content_type = None
@@ -347,7 +375,7 @@ def admin_request(
         raise AdminError(f"{label}: private channel transport failure")
     # Do not accept even a successful response if the named gateway changed
     # between identity resolution and completion of docker exec.
-    confirm_unchanged(container)
+    confirm_unchanged(container, traditional_approval=traditional_approval)
     raw, separator, status = result.stdout.rpartition(b"\n")
     if not separator or not re.fullmatch(rb"[0-9]{3}", status):
         raise AdminError(f"{label}: unreadable response")

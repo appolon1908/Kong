@@ -61,29 +61,29 @@
     { "name": "codestra-platform-session-context-read", "path": "/platform/v1/session/context", "methods": ["GET"], "requiredScope": "session:read", "idempotencyRequired": false, "ratePerMinute": 240 },
     { "name": "codestra-platform-session-context-select", "path": "/platform/v1/session/context/select", "methods": ["POST"], "requiredScope": "session:select", "idempotencyRequired": false, "ratePerMinute": 60 },
 
-    { "name": "codestra-platform-users-read", "path": "~^/platform/v1/users/[^/]+$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-users-campaigns-read", "path": "~^/platform/v1/users/[^/]+/campaigns$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-users-entitlements-read", "path": "~^/platform/v1/users/[^/]+/entitlements$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-users-read", "path": "~/platform/v1/users/[^/]+$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-users-campaigns-read", "path": "~/platform/v1/users/[^/]+/campaigns$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-users-entitlements-read", "path": "~/platform/v1/users/[^/]+/entitlements$", "methods": ["GET"], "requiredScope": "users:read", "idempotencyRequired": false, "ratePerMinute": 240 },
 
     { "name": "codestra-platform-telephony-assignments-read", "path": "/platform/v1/telephony/assignments", "methods": ["GET"], "requiredScope": "telephony:status", "idempotencyRequired": false, "ratePerMinute": 240 },
     { "name": "codestra-platform-email-identities-read", "path": "/platform/v1/email/identities", "methods": ["GET"], "requiredScope": "email:read", "idempotencyRequired": false, "ratePerMinute": 240 },
     { "name": "codestra-platform-sms-identities-read", "path": "/platform/v1/sms/identities", "methods": ["GET"], "requiredScope": "sms:read", "idempotencyRequired": false, "ratePerMinute": 240 },
 
     { "name": "codestra-platform-calls-list", "path": "/platform/v1/calls", "methods": ["GET"], "requiredScope": "telephony:status", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-calls-read", "path": "~^/platform/v1/calls/[0-9a-fA-F-]{36}$", "methods": ["GET"], "requiredScope": "telephony:status", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-calls-read", "path": "~/platform/v1/calls/[0-9a-fA-F-]{36}$", "methods": ["GET"], "requiredScope": "telephony:status", "idempotencyRequired": false, "ratePerMinute": 240 },
 
     { "name": "codestra-platform-activity-list", "path": "/platform/v1/activity", "methods": ["GET"], "requiredScope": "activity:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-activity-read", "path": "~^/platform/v1/activity/[^/]+$", "methods": ["GET"], "requiredScope": "activity:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-activity-read", "path": "~/platform/v1/activity/[^/]+$", "methods": ["GET"], "requiredScope": "activity:read", "idempotencyRequired": false, "ratePerMinute": 240 },
 
     { "name": "codestra-platform-presence-list", "path": "/platform/v1/agents/presence", "methods": ["GET"], "requiredScope": "presence:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-presence-agent-read", "path": "~^/platform/v1/agents/[^/]+/presence$", "methods": ["GET"], "requiredScope": "presence:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-presence-agent-read", "path": "~/platform/v1/agents/[^/]+/presence$", "methods": ["GET"], "requiredScope": "presence:read", "idempotencyRequired": false, "ratePerMinute": 240 },
     { "name": "codestra-platform-presence-self-read", "path": "/platform/v1/me/presence", "methods": ["GET"], "requiredScope": "presence:read", "idempotencyRequired": false, "ratePerMinute": 240 },
 
     { "name": "codestra-platform-queues-list", "path": "/platform/v1/queues", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-queues-read", "path": "~^/platform/v1/queues/[^/]+$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-queues-members-read", "path": "~^/platform/v1/queues/[^/]+/members$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-queues-calls-read", "path": "~^/platform/v1/queues/[^/]+/calls$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
-    { "name": "codestra-platform-queues-metrics-read", "path": "~^/platform/v1/queues/[^/]+/metrics$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 }
+    { "name": "codestra-platform-queues-read", "path": "~/platform/v1/queues/[^/]+$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-queues-members-read", "path": "~/platform/v1/queues/[^/]+/members$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-queues-calls-read", "path": "~/platform/v1/queues/[^/]+/calls$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 },
+    { "name": "codestra-platform-queues-metrics-read", "path": "~/platform/v1/queues/[^/]+/metrics$", "methods": ["GET"], "requiredScope": "queues:read", "idempotencyRequired": false, "ratePerMinute": 240 }
   ],
   "security": {
     "browserTokensForbidden": true,

@@ -5,12 +5,43 @@
 # kong/kong-gateway:3.14.0.1-ubuntu and writes kong-image.txt). Retagging or
 # floating tags at deploy time is intentionally unsupported.
 #
-# This file stands a node up. It does not authorize one: activation still
+# This is a hybrid DP compatibility profile; runtime startup is locked. It does not authorize one: activation still
 # requires operations/runbooks/kong-production-activation.md.
 services:
   kong-gateway:
     image: kong/kong-gateway@${KONG_IMAGE_DIGEST:?KONG_IMAGE_DIGEST must be an immutable sha256 digest}
-    restart: unless-stopped
+    restart: 'no'
+    stop_signal: SIGQUIT
+    stop_grace_period: 300s
+    profiles: [hybrid-source]
+    entrypoint: [sh, /etc/codestra/runtime-guard.sh]
+    command: [kong, docker-start]
+    volumes:
+      - type: bind
+        source: ./plugins/codestra-authz
+        target: /usr/local/share/lua/5.1/kong/plugins/codestra-authz
+        read_only: true
+      - type: bind
+        source: ./plugins/codestra-request-context
+        target: /usr/local/share/lua/5.1/kong/plugins/codestra-request-context
+        read_only: true
+      - type: bind
+        source: ./plugins/codestra-webhook-verifier
+        target: /usr/local/share/lua/5.1/kong/plugins/codestra-webhook-verifier
+        read_only: true
+      - type: bind
+        source: ./plugins/codestra-private-surface
+        target: /usr/local/share/lua/5.1/kong/plugins/codestra-private-surface
+        read_only: true
+      - type: bind
+        source: ./plugins/codestra-resource-guard
+        target: /usr/local/share/lua/5.1/kong/plugins/codestra-resource-guard
+        read_only: true
+      - dp_prefix:/var/run/kong
+      - type: bind
+        source: ../gateway-platform/runtime-guard.sh
+        target: /etc/codestra/runtime-guard.sh
+        read_only: true
 
     # Secrets that Kong itself understands are injected as KONG_<OPTION>_FILE;
     # the official entrypoint reads the file and exports the value. That
@@ -29,17 +60,21 @@ services:
       - ${CODESTRA_RUNTIME_ENV:?CODESTRA_RUNTIME_ENV must point at the root-owned runtime env file}
 
     environment:
+      KONG_PLUGINS: bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier,codestra-private-surface,codestra-resource-guard
       # Rationale for each setting is in kong.conf.example. Kept as KONG_* env
       # rather than a mounted kong.conf so the running node's configuration is
       # visible in the compose source under review.
-      KONG_DATABASE: postgres
-      KONG_PG_HOST: ${KONG_DB_STABLE_ENDPOINT:?KONG_DB_STABLE_ENDPOINT must be the approved private endpoint}
-      KONG_PG_PORT: "5432"
-      KONG_PG_DATABASE: kong
-      KONG_PG_USER: kong_runtime
-      KONG_PG_PASSWORD_FILE: /run/secrets/kong_database_runtime_password
-      KONG_PG_SSL: "on"
-      KONG_PG_SSL_VERIFY: "on"
+      CODESTRA_RUNTIME_APPLY_AUTHORIZED: "false"
+      KONG_ROLE: data_plane
+      KONG_DATABASE: "off"
+      KONG_CLUSTER_MTLS: pki
+      KONG_CLUSTER_CONTROL_PLANE: kong-cp.internal.codestra:8005
+      KONG_CLUSTER_TELEMETRY_ENDPOINT: kong-cp.internal.codestra:8006
+      KONG_CLUSTER_SERVER_NAME: kong-cp.internal.codestra
+      KONG_CLUSTER_TELEMETRY_SERVER_NAME: kong-cp.internal.codestra
+      KONG_CLUSTER_CA_CERT: /run/secrets/cluster_ca
+      KONG_CLUSTER_CERT: /run/secrets/dp_cert
+      KONG_CLUSTER_CERT_KEY: /run/secrets/dp_key
       KONG_LUA_SSL_TRUSTED_CERTIFICATE: system
 
       # Without trusted_ips, get_forwarded_scheme() reports the real loopback
@@ -57,9 +92,8 @@ services:
       KONG_VAULTS: env
 
       KONG_PROXY_LISTEN: 0.0.0.0:8000
-      # Container loopback only: shared-network peers must not reach Admin.
-      # Reviewed read-only capture runs inside this existing namespace.
-      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+      # Data planes have no Admin API authority.
+      KONG_ADMIN_LISTEN: "off"
       KONG_ADMIN_GUI_LISTEN: "off"
       KONG_STATUS_LISTEN: 0.0.0.0:8100
       KONG_HEADERS: "off"
@@ -75,18 +109,22 @@ services:
       KONG_LICENSE_PATH: /run/secrets/kong_license
 
       # Kong writes its generated nginx configuration and pid files into the
-      # prefix. The container root stays read-only, so the prefix is a tmpfs.
+      # prefix. Retain it on a pre-provisioned private volume for CP outages.
       KONG_PREFIX: /var/run/kong
+      KONG_NGINX_DAEMON: "off"
+      KONG_NGINX_MAIN_WORKER_SHUTDOWN_TIMEOUT: 240s
 
     secrets:
       - kong_license
-      - kong_database_runtime_password
+      - cluster_ca
+      - dp_cert
+      - dp_key
 
     ports:
       # Host loopback only. Caddy runs on the host and reaches the data plane at
       # 127.0.0.1:8000 (CADDY_KONG_UPSTREAM in appolon1908-hue/Caddy). The Admin
       # API and the status listener are deliberately not published: the Admin
-      # API stays on container loopback, and the status listener is reachable
+      # API is disabled, and the status listener is reachable
       # only over the private observability network.
       - "127.0.0.1:8000:8000"
 
@@ -94,23 +132,26 @@ services:
       kong_frontend:
         aliases: [codestra-kong]
       codestra_backend: {}
+      kong_cluster: {}
       codestra_observability:
         aliases: [kong]
 
     read_only: true
     tmpfs:
       - /tmp
-      - /var/run/kong
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     healthcheck:
-      test: [CMD, kong, health]
+      test: [CMD, curl, --fail, --silent, --show-error, --noproxy, '*', --max-time, '3', 'http://127.0.0.1:8100/status/ready']
       interval: 10s
       timeout: 5s
       retries: 6
       start_period: 30s
 
 networks:
+  kong_cluster:
+    external: true
+    name: codestra_kong_cluster
   kong_frontend:
     external: true
     name: codestra_edge
@@ -126,5 +167,14 @@ secrets:
   # Git; see SECURITY.md.
   kong_license:
     file: /etc/codestra/secrets/kong/license.json
-  kong_database_runtime_password:
-    file: /etc/codestra/secrets/kong/database-runtime-password
+  cluster_ca:
+    file: /etc/codestra/secrets/kong/cluster-ca.crt
+  dp_cert:
+    file: /etc/codestra/secrets/kong/dp.crt
+  dp_key:
+    file: /etc/codestra/secrets/kong/dp.key
+
+volumes:
+  dp_prefix:
+    external: true
+    name: ${KONG_DP_CACHE_VOLUME:?approved persistent private cache volume required}

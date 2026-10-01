@@ -22,9 +22,9 @@ def test_parallel_lane_pins_final_external_authorities_and_stays_source_only() -
     parity.validate_config(CONFIG)
     sources = CONFIG["sources"]
     assert sources["kong"]["frozen_base_sha"] == "ee86cdf870aebaac550a78a9617321ee48324589"
-    assert sources["middleware"]["source_sha"] == "2862af0aa97367b18cb360af69212abe4243a1ac"
+    assert sources["middleware"]["source_sha"] == "bd406a6508c8095a3f23b35149a2eebcb94c94c6"
     assert sources["middleware"]["contract_sha256"] == "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
-    assert sources["caddy"]["source_sha"] == "56fd73d1647f7023cb07bdb14b1f72522c7b48d8"
+    assert sources["caddy"]["source_sha"] == "22c6d51ed2f5340139177131fb810e787f0f7550"
     assert sources["keycloak"]["source_sha"] == "45a487d71a516ae3039b00c250752897469ffe7a"
     assert CONFIG["runtime_apply_authorized"] is False
     assert CONFIG["provider_effects_enabled"] is False

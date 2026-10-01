@@ -339,6 +339,10 @@
                 "minimum": 1,
                 "type": "integer"
               },
+              "retrySafe": {
+                "description": "Explicit reviewed authorization for retries of effects, in addition to Middleware idempotency authority.",
+                "type": "boolean"
+              },
               "scopes": {
                 "items": {
                   "maxLength": 128,
@@ -350,6 +354,27 @@
                 "minItems": 0,
                 "type": "array",
                 "uniqueItems": true
+              },
+              "trafficPolicy": {
+                "additionalProperties": false,
+                "properties": {
+                  "burstPerSecond": {
+                    "maximum": 1000000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "maxConcurrentPerWorker": {
+                    "maximum": 10000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "tenantQuotaPerMinute": {
+                    "maximum": 1000000,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
               }
             },
             "required": [

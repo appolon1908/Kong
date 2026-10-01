@@ -15,6 +15,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "config" / "kong-webhook-registry.v1.json"
+# Caddy rows name the gateway by this repository's current full name; the
+# release registry contract is the single authority for that identity.
+KONG_REPOSITORY = json.loads(
+    (ROOT / "config" / "kong-release-registry-contract.v1.json").read_text(encoding="utf-8")
+)["repository"]["fullName"]
 
 
 class WebhookError(ValueError):
@@ -124,7 +129,7 @@ def validate_against_caddy(registry: dict[str, Any], caddy_repo: Path) -> dict[s
             row = caddy_webhook_by_path.get(entry["path"])
             if not row or row.get("classification") != "CANONICAL":
                 raise WebhookError(f"Caddy canonical webhook missing: {entry['path']}")
-            if row.get("gateway") != "ingtrader21-spec/Kong":
+            if row.get("gateway") != KONG_REPOSITORY:
                 raise WebhookError(f"Caddy webhook does not hand off to Kong: {entry['path']}")
         elif entry["id"] == "github-events":
             row = next(
@@ -133,7 +138,7 @@ def validate_against_caddy(registry: dict[str, Any], caddy_repo: Path) -> dict[s
                     for item in edge_entries
                     if item.get("path") == "/platform/v1/*"
                     and item.get("classification") == "CANONICAL"
-                    and item.get("gateway") == "ingtrader21-spec/Kong"
+                    and item.get("gateway") == KONG_REPOSITORY
                 ),
                 None,
             )

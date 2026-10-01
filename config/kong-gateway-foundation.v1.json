@@ -1150,12 +1150,16 @@
       "priority"
     ],
     "globalPluginsAllowed": [
-      "prometheus"
+      "prometheus",
+      "codestra-private-surface"
     ],
     "authenticationMustBeExplicit": true,
     "preFunctionAllowedSources": [
       "config/kong-calling-routes.v1.json",
-      "config/kong-platform-api-read-routes.v1.json"
+      "config/kong-platform-api-read-routes.v1.json",
+      "config/kong-middleware-routes.production.yml",
+      "config/staging/kong-middleware-routes.staging.yml",
+      "config/kong-canonical-middleware-routes.json"
     ],
     "priorityReference": "Kong Gateway 3.x bundled plugin priorities; custom plugins declare PRIORITY in their handler"
   },
@@ -1209,6 +1213,10 @@
         "reason": "the registry itself"
       },
       {
+        "path": "config/kong-route-reconciliation.pas236.json",
+        "reason": "PAS-244 source-only reconciliation disposition manifest; validated by the deterministic reconciliation planner and tests, not an activatable Kong route source"
+      },
+      {
         "path": "config/kong-access-policy.v1.json",
         "reason": "Mission 2 access policy overlay keyed by routeId; validated by validate_access_policy against this registry"
       },
@@ -1251,6 +1259,18 @@
       {
         "path": "config/kong-webhook-registry.v1.json",
         "reason": "Lane C webhook ownership/certification registry; canonical/pending ingress routes remain sourced from the Middleware route authority and Kong declarative manifests."
+      },
+      {
+        "path": "config/kong-mcr-routes.v1.json",
+        "reason": "MCR-J source-only route contract (runtimeApplyAuthorized=false); validated by scripts/validate_kong_mcr_routes.py for Middleware :8095 upstream, zero overlap with the pinned Middleware contract and private-surface denial. Foundation route registration is required before any activation."
+      },
+      {
+        "path": "config/kong-mcr-routes.production.yml",
+        "reason": "MCR-J declarative fragment rendered from config/kong-mcr-routes.v1.json by scripts/render_kong_mcr_routes.py; not deployed and not activation-eligible until registered as a foundation source."
+      },
+      {
+        "path": "config/staging/kong-mcr-routes.staging.yml",
+        "reason": "MCR-J staging declarative fragment rendered from config/kong-mcr-routes.v1.json by scripts/render_kong_mcr_routes.py; not deployed and not activation-eligible until registered as a foundation source."
       }
     ]
   },
@@ -13253,16 +13273,20 @@
         "ROUTE"
       ],
       "owner": "gateway-platform",
-      "purpose": "Raw request-metadata guards only (correlation header presence); never claims or scopes.",
+      "purpose": "Raw request metadata guards and client-supplied identity-header stripping before authentication; never reads claims or credentials.",
       "securityImpact": "HIGH",
       "orderingDependency": "Runs before every authentication plugin; must not read credentials or claims.",
       "environments": [
+        "staging",
         "production"
       ],
       "configurationSources": [
         "config/kong-calling-routes.v1.json",
         "config/kong-production-route-inventory.v2.json",
-        "config/kong-platform-api-read-routes.v1.json"
+        "config/kong-platform-api-read-routes.v1.json",
+        "config/kong-middleware-routes.production.yml",
+        "config/staging/kong-middleware-routes.staging.yml",
+        "config/kong-canonical-middleware-routes.json"
       ]
     },
     {
@@ -13284,7 +13308,11 @@
       ],
       "configurationSources": [
         "deploy/kong/plugins/codestra-request-context/handler.lua",
-        "scripts/gateway_integrations.py"
+        "scripts/gateway_integrations.py",
+        "scripts/generate_middleware_routes.py",
+        "config/kong-canonical-middleware-routes.json",
+        "config/kong-middleware-routes.production.yml",
+        "config/staging/kong-middleware-routes.staging.yml"
       ]
     },
     {
@@ -13718,6 +13746,57 @@
         "config/kong-middleware-routes.production.yml",
         "config/staging/kong-middleware-routes.staging.yml",
         "config/kong-platform-api-read-routes.v1.json"
+      ]
+    },
+    {
+      "plugin": "codestra-private-surface",
+      "kind": "custom",
+      "authentication": false,
+      "priority": 100004,
+      "allowedScopes": [
+        "GLOBAL",
+        "ROUTE"
+      ],
+      "owner": "gateway-platform",
+      "purpose": "Reject management/private paths and encoded bypasses before authentication; private overrides require governed source restrictions.",
+      "securityImpact": "HIGH",
+      "orderingDependency": "Before all authentication",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "configurationSources": [
+        "scripts/gateway_integrations.py",
+        "scripts/generate_middleware_routes.py",
+        "config/kong-canonical-middleware-routes.json",
+        "config/kong-middleware-routes.production.yml",
+        "config/staging/kong-middleware-routes.staging.yml",
+        "deploy/kong/plugins/codestra-private-surface/handler.lua"
+      ]
+    },
+    {
+      "plugin": "codestra-resource-guard",
+      "kind": "custom",
+      "authentication": false,
+      "priority": 800,
+      "allowedScopes": [
+        "ROUTE"
+      ],
+      "owner": "gateway-platform",
+      "purpose": "Bound in-flight requests per route per worker, global verified-tenant Redis quotas, and gateway error responses.",
+      "securityImpact": "HIGH",
+      "orderingDependency": "After codestra-authz; tenant quota reads only verified shared context",
+      "environments": [
+        "staging",
+        "production"
+      ],
+      "configurationSources": [
+        "scripts/gateway_integrations.py",
+        "scripts/generate_middleware_routes.py",
+        "config/kong-canonical-middleware-routes.json",
+        "config/kong-middleware-routes.production.yml",
+        "config/staging/kong-middleware-routes.staging.yml",
+        "deploy/kong/plugins/codestra-resource-guard/handler.lua"
       ]
     }
   ],

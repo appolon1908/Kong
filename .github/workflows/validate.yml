@@ -39,7 +39,7 @@ jobs:
       - name: Install validation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends shellcheck lua5.4
+          sudo apt-get install -y --no-install-recommends shellcheck lua5.4 redis-server
           python3 -m pip install --disable-pip-version-check pytest PyYAML -r tools/gateway-test-requirements.txt
       - name: Validate structured source and calling policy
         run: |
@@ -58,6 +58,8 @@ jobs:
           python3 scripts/validate_kong_calling_policy.py --self-test
           python3 scripts/validate_kong_production_inventory.py
           python3 scripts/validate_middleware_edge_contract.py
+          python3 scripts/validate_kong_mcr_routes.py
+          python3 scripts/generate_kong_postman.py --check
           python3 scripts/validate_kong_foundation.py --v3-phase auto | tee /tmp/kong-v3-foundation.txt
           python3 scripts/validate_release_supply_chain.py
           python3 tools/release_contract.py --assert-repository "${GITHUB_REPOSITORY}" --assert-owner "${GITHUB_REPOSITORY_OWNER}"
@@ -135,7 +137,7 @@ jobs:
       - name: Install merge-result validation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends lua5.4
+          sudo apt-get install -y --no-install-recommends lua5.4 redis-server
           python3 -m pip install --disable-pip-version-check pytest PyYAML -r tools/gateway-test-requirements.txt
       - name: Validate merge-result calling policy and manifests
         run: |

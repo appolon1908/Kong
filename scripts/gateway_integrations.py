@@ -10,6 +10,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from jsonschema import Draft202012Validator, FormatChecker
+from scripts.kong_private_surface import private_surface_error, runtime_plugin_config
+from scripts.kong_traffic_policy import passive_health, resource_guard, traffic_policy
 
 ROOT = Path(__file__).resolve().parents[1]
 AUTHORITY = ROOT / "config/integrations"
@@ -30,7 +32,12 @@ POLICY_PLUGINS = {
 }
 TRUST_HEADERS = ["X-Authenticated-Client", "X-Authenticated-Subject", "X-Authenticated-Email",
                  "X-Tenant-ID", "X-Consumer-ID", "X-Consumer-Username", "X-Credential-Identifier",
-                 "X-Anonymous-Consumer", "X-Codestra-Tenant", "X-Codestra-Scopes"]
+                 "X-Anonymous-Consumer", "X-Codestra-Tenant", "X-Codestra-Scopes",
+                 "X-User-ID", "X-Username", "X-Email", "X-Roles", "X-Scopes",
+                 "X-Authenticated-UserID", "X-Authenticated-User", "X-Authenticated-Tenant",
+                 "X-Authenticated-Campaign", "X-Authenticated-Role", "X-Codestra-Gateway-Secret",
+                 "X-Internal-Service", "X-Admin", "X-Codestra-Contract-Operation",
+                 "X-Codestra-Expected-Azp", "X-Codestra-Required-Scope"]
 
 
 class ContractError(ValueError):
@@ -169,6 +176,13 @@ def validate(document, *, today=None):
     seen_ids, seen_operations = set(), set()
     for route in spec["routes"]:
         path_segments(route["path"])
+        boundary_error = private_surface_error(route, exposure=spec["exposure"],
+                                               source_allowlist=policies["sourceAllowlist"])
+        _require(boundary_error is None, boundary_error)
+        traffic = traffic_policy(route, upstream)
+        _require(traffic["burstPerSecond"] <= traffic["ratePerMinute"], "burst_exceeds_minute_limit")
+        _require(not traffic["tenantQuotaPerMinute"] or template in OIDC,
+                 "tenant_quota_requires_verified_identity")
         _require(route["id"] not in seen_ids, "duplicate_route_id")
         seen_ids.add(route["id"])
         _require(len(route["methods"]) == len(route["operationIds"]), "operation_method_count_mismatch")
@@ -180,7 +194,8 @@ def validate(document, *, today=None):
         else:
             _require(not route["scopes"], "scope_requires_oidc")
         if set(route["methods"]) - {"GET", "HEAD", "OPTIONS"}:
-            _require(not upstream["retries"] or upstream["idempotencyAuthority"] == "Middleware", "unsafe_write_retry")
+            _require(not upstream["retries"] or (upstream["idempotencyAuthority"] == "Middleware"
+                     and route.get("retrySafe") is True), "unsafe_write_retry")
         if template == "public-health":
             _require(policies["requireCorrelationId"] is False, "public_health_correlation_must_be_optional")
             _require(set(route["methods"]) <= {"GET", "HEAD"} and route["match"] == "exact"
@@ -234,7 +249,7 @@ def _route_path(route):
     pieces = ["[^/]+" if p.startswith("{") else re.escape(p) for p in path_segments(route["path"])]
     pattern = "/" + "/".join(pieces)
     # Prefix is a segment boundary, never /orders matching /orders-admin.
-    return "~^" + pattern + ("$" if route["match"] == "exact" else (".*$" if pattern == "/" else "(?:/.*)?$"))
+    return "~" + pattern + ("$" if route["match"] == "exact" else (".*$" if pattern == "/" else "(?:/.*)?$"))
 
 
 def _plugin(name, config):
@@ -263,18 +278,26 @@ def compile_integrations(documents, *, environment):
                 "targets": [{"target": f'{upstream["dnsName"]}:{upstream["port"]}', "weight": 100}],
                 "healthchecks": {"active": {"type": upstream["protocol"], "http_path": upstream["readinessPath"],
                     "healthy": {"interval": 10, "successes": 2},
-                    "unhealthy": {"interval": 5, "http_failures": 2, "tcp_failures": 2, "timeouts": 2}}}}
+                    "unhealthy": {"interval": 5, "http_failures": 2, "tcp_failures": 2, "timeouts": 2}},
+                    "passive": passive_health()}}
             if upstream["protocol"] == "https":
                 upstreams[service_name]["healthchecks"]["active"].update(
                     {"https_sni": upstream["tlsServerName"], "https_verify_certificate": True})
         for route in sorted(spec["routes"], key=lambda r: r["id"]):
             route_name = environment + "--" + meta["id"] + "--" + route["id"]
+            traffic = traffic_policy(route, upstream)
+            redis = {"host": policies["redisHost"], "port": 6379, "database": 0,
+                     "timeout": 2000, "password": policies["redisPasswordRef"]}
             plugins = [_plugin("codestra-request-context", {"require_correlation_id": policies["requireCorrelationId"]}),
                 _plugin("request-size-limiting", {"allowed_payload_size": route["maxBodyBytes"], "size_unit": "bytes",
                                                   "require_content_length": False}),
-                _plugin("rate-limiting", {"minute": route["ratePerMinute"], "policy": "redis", "fault_tolerant": False,
+                _plugin("rate-limiting", {"minute": route["ratePerMinute"], "second": traffic["burstPerSecond"],
+                    "error_code": 429, "error_message": "rate_limit_exceeded", "policy": "redis", "fault_tolerant": False,
                     "limit_by": "ip", "redis": {"host": policies["redisHost"], "port": 6379, "database": 0,
                     "timeout": 2000, "password": policies["redisPasswordRef"]}})]
+            plugins.extend([resource_guard(route_name, traffic, redis),
+                _plugin("codestra-private-surface", runtime_plugin_config(
+                    exposure=spec["exposure"], source_allowlist=policies["sourceAllowlist"]))])
             if template == "legacy-api-key":
                 plugins[0]["config"]["not_after"] = int(datetime.combine(
                     date.fromisoformat(auth["legacySunset"]), datetime.min.time(), tzinfo=timezone.utc).timestamp())
@@ -282,7 +305,10 @@ def compile_integrations(documents, *, environment):
                 plugins.extend([_plugin("openid-connect", {"issuer": auth["issuer"] + "/.well-known/openid-configuration", "auth_methods": ["bearer"],
                     "cache_tokens_salt": "{vault://env/kong-oidc-cache-tokens-salt}",
                     "bearer_token_param_type": ["header"], "audience_required": [auth["audience"]], "consumer_claim": ["azp"],
-                    "scopes_required": sorted(route["scopes"]), "ssl_verify": True}),
+                    "scopes_required": [" ".join(sorted(route["scopes"]))], "ssl_verify": True,
+                    "issuers_allowed": [auth["issuer"]], "verify_signature": True, "verify_claims": True,
+                    "consumer_by": ["username"], "consumer_optional": False,
+                    "cache_ttl": 300, "cache_ttl_max": 300, "rediscovery_lifetime": 30, "leeway": 0}),
                     _plugin("codestra-authz", {"issuer": auth["issuer"], "audience": auth["audience"],
                         "authorized_parties": sorted(auth["authorizedParties"]), "scopes": sorted(route["scopes"]),
                         "roles": sorted(auth["roles"]), "tenant_claim": auth["tenantClaim"]})])
@@ -305,7 +331,7 @@ def compile_integrations(documents, *, environment):
                 "paths": [_route_path(route)], "methods": sorted(set(route["methods"]) | ({"OPTIONS"} if policies["corsOrigins"] else set())), "protocols": ["https"],
                 "strip_path": False, "preserve_host": False, "regex_priority": 100,
                 "plugins": sorted(plugins, key=lambda p: p["name"])})
-            matrix.append({"integration_id": meta["id"], "route": route_name,
+            matrix.append({"integration_id": meta["id"], "route": route_name, "traffic_policy": traffic,
                 "cases": ["positive", "wrong_method", "oversized_body", "rate_exceeded", "redis_unavailable",
                           "upstream_unavailable", "spoofed_identity", "correlation_id", "rollback"] +
                          (["missing_token", "missing_required_claim", "wrong_issuer", "wrong_audience", "wrong_azp", "wrong_role", "wrong_scope", "wrong_tenant"]
@@ -315,7 +341,8 @@ def compile_integrations(documents, *, environment):
     for service in services.values():
         service["routes"].sort(key=lambda r: r["name"])
     declarative = {"_format_version": "3.0", "_transform": True,
-                   "plugins": [_plugin("prometheus", {"status_code_metrics": True, "latency_metrics": True,
+                   "plugins": [_plugin("codestra-private-surface", {"allow_private": False}),
+                       _plugin("prometheus", {"status_code_metrics": True, "latency_metrics": True,
                        "bandwidth_metrics": True, "upstream_health_metrics": True})],
                    "services": [services[k] for k in sorted(services)],
                    "upstreams": [upstreams[k] for k in sorted(upstreams)],

@@ -58,7 +58,7 @@ def verify_container(container: str) -> str:
     identifier = value.get('id', '')
     if not isinstance(identifier, str) or not re.fullmatch(r'[0-9a-f]{64}', identifier):
         raise CaptureError('invalid_identity')
-    if value.get('running') is not True or value.get('service') != 'kong-gateway':
+    if value.get('running') is not True or value.get('service') not in ('kong-gateway', 'kong-cp'):
         raise CaptureError('wrong_service')
     mode = value.get('network_mode')
     if not isinstance(mode, str) or mode in {'host', 'none'} or mode.startswith('container:'):

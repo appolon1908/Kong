@@ -3,7 +3,12 @@ local Handler = { PRIORITY = 100002, VERSION = "1.0.0" }
 local identity_headers = {
   "X-Authenticated-Client", "X-Authenticated-Subject", "X-Authenticated-Email",
   "X-Tenant-ID", "X-Consumer-ID", "X-Consumer-Username", "X-Credential-Identifier",
-  "X-Anonymous-Consumer", "X-Codestra-Tenant", "X-Codestra-Scopes"
+  "X-Anonymous-Consumer", "X-Codestra-Tenant", "X-Codestra-Scopes",
+  "X-User-ID", "X-Username", "X-Email", "X-Roles", "X-Scopes",
+  "X-Authenticated-UserID", "X-Authenticated-User", "X-Authenticated-Tenant",
+  "X-Authenticated-Campaign", "X-Authenticated-Role", "X-Codestra-Gateway-Secret",
+  "X-Internal-Service", "X-Admin", "X-Codestra-Contract-Operation",
+  "X-Codestra-Expected-Azp", "X-Codestra-Required-Scope"
 }
 local function safe_id(value)
   return type(value) == "string" and #value >= 1 and #value <= 128

@@ -104,7 +104,8 @@ def test_every_scoped_contract_route_is_declared_with_the_same_method_and_scope(
         assert route["serviceHost"] == "middleware-integration-api"
         assert route["servicePort"] == 8095
         assert route["stripPath"] is False
-        assert {"openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting"} == set(
+        assert {"pre-function", "openid-connect", "post-function", "correlation-id", "rate-limiting", "request-size-limiting",
+                "codestra-private-surface", "codestra-resource-guard", "codestra-request-context"} == set(
             route["requiredPlugins"]
         )
         row = authority[(method, template)]

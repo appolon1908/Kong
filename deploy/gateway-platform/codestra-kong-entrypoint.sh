@@ -1,5 +1,11 @@
 #!/bin/sh
 set -eu
+# Deny before reading credentials or starting any runtime process.
+if [ ! -r /etc/codestra/runtime-guard.sh ]; then
+  echo "runtime_apply_unauthorized: runtime guard unavailable" >&2
+  exit 78
+fi
+sh /etc/codestra/runtime-guard.sh
 # The env Vault provider reads this process variable. It is not a kong.conf
 # option, so the upstream Kong entrypoint's generic *_FILE support cannot load it.
 sx_redis_file=/run/secrets/redis_password

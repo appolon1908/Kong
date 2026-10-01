@@ -102,8 +102,8 @@ def validate() -> list[str]:
         if template != authority.get("path_template", authority["path"]):
             fail(f"canonical route {route['name']} pathTemplate drift")
         generated = route["paths"][0]
-        if not generated.startswith("~^") or not generated.endswith("$"):
-            fail(f"canonical route {route['name']} is not exact")
+        if not generated.startswith("~/") or not generated.endswith("$"):
+            fail(f"canonical route {route['name']} is not an exact Kong regex path")
         if route["serviceHost"] != "middleware-integration-api" or route["servicePort"] != 8095:
             fail(f"canonical route {route['name']} upstream drift")
         declared[key] = {"name": route["name"], "scope": authority["scope"]}

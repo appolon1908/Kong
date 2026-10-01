@@ -149,9 +149,14 @@ def test_canonical_and_generated_manifests_are_8095_and_complete() -> None:
             oidc = next(plugin for plugin in route["plugins"] if plugin["name"] == "openid-connect")
             assert oidc["config"]["issuer"] == issuer + "/.well-known/openid-configuration"
 
+        for route in [*service["routes"], *manifest["routes"]]:
+            assert all(value.startswith("~/") for value in route["paths"])
+            assert all(not value.startswith("~^/") for value in route["paths"])
+
         rendered = path.read_text(encoding="utf-8")
         assert "appolon-middleware-integration-api" not in rendered
         assert "port: 8080" not in rendered
+        assert "~^/" not in rendered
 
 
 def test_generator_is_deterministic_at_final_contract() -> None:

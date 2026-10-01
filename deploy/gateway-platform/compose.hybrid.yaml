@@ -11,6 +11,8 @@ services:
     mem_limit: 1g
     cpus: '1.0'
     restart: 'no'
+    stop_signal: SIGQUIT
+    stop_grace_period: 300s
     tmpfs:
     - /tmp:rw,noexec,nosuid,size=64m
     - /usr/local/kong:rw,nosuid,size=256m,uid=1000,gid=1000
@@ -20,6 +22,8 @@ services:
     - hybrid-source
     environment:
       KONG_PREFIX: /usr/local/kong
+      KONG_NGINX_DAEMON: 'off'
+      KONG_NGINX_MAIN_WORKER_SHUTDOWN_TIMEOUT: 240s
       KONG_ADMIN_LISTEN: 127.0.0.1:8001
       KONG_ADMIN_GUI_LISTEN: 'off'
       KONG_STATUS_LISTEN: 0.0.0.0:8100
@@ -29,7 +33,7 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: warn
       KONG_ANONYMOUS_REPORTS: 'off'
-      KONG_PLUGINS: bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier
+      KONG_PLUGINS: bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier,codestra-private-surface,codestra-resource-guard
       KONG_LUA_SSL_TRUSTED_CERTIFICATE: /run/secrets/trust_ca
       KONG_DATABASE: postgres
       KONG_PG_HOST: kong-postgres.internal.codestra
@@ -38,6 +42,8 @@ services:
       KONG_PG_USER: kong_runtime
       KONG_PG_PASSWORD_FILE: /run/secrets/kong_runtime_password
       KONG_PG_SSL: 'on'
+      KONG_PG_SSL_REQUIRED: 'on'
+      KONG_PG_TIMEOUT: '5000'
       KONG_PG_SSL_VERIFY: 'on'
       KONG_PG_MAX_CONCURRENT_QUERIES: '20'
       KONG_ROLE: control_plane
@@ -51,6 +57,7 @@ services:
       KONG_LICENSE_PATH: /run/secrets/kong_license
       KONG_STATUS_ACCESS_LOG: 'off'
       KONG_VAULTS: env
+      CODESTRA_RUNTIME_APPLY_AUTHORIZED: 'false'
     networks:
       kong_admin: null
       kong_database: null
@@ -74,9 +81,54 @@ services:
     - docker-start
     volumes:
     - type: bind
-      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook secret directory required}
+      source: ../kong/plugins/codestra-authz
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-authz
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-request-context
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-request-context
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-webhook-verifier
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-webhook-verifier
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-private-surface
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-private-surface
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-resource-guard
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-resource-guard
+      read_only: true
+    - type: bind
+      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook
+        secret directory required}
       target: /run/secrets/webhooks
       read_only: true
+    - type: bind
+      source: ./runtime-guard.sh
+      target: /etc/codestra/runtime-guard.sh
+      read_only: true
+    - type: bind
+      source: ./codestra-kong-entrypoint.sh
+      target: /usr/local/bin/codestra-kong-entrypoint
+      read_only: true
+    healthcheck:
+      test: &id003
+      - CMD
+      - curl
+      - --fail
+      - --silent
+      - --show-error
+      - --noproxy
+      - '*'
+      - --max-time
+      - '3'
+      - http://127.0.0.1:8100/status/ready
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
   kong-dp-1:
     read_only: true
     user: 1000:1000
@@ -86,6 +138,8 @@ services:
     mem_limit: 1g
     cpus: '1.0'
     restart: 'no'
+    stop_signal: SIGQUIT
+    stop_grace_period: 300s
     tmpfs:
     - /tmp:rw,noexec,nosuid,size=64m
     image: ${KONG_PLATFORM_IMAGE_REPOSITORY:?reviewed gateway image repository required}@${KONG_PLATFORM_IMAGE_DIGEST:?immutable
@@ -94,6 +148,8 @@ services:
     - hybrid-source
     environment:
       KONG_PREFIX: /usr/local/kong
+      KONG_NGINX_DAEMON: 'off'
+      KONG_NGINX_MAIN_WORKER_SHUTDOWN_TIMEOUT: 240s
       KONG_ADMIN_LISTEN: 'off'
       KONG_ADMIN_GUI_LISTEN: 'off'
       KONG_STATUS_LISTEN: 0.0.0.0:8100
@@ -103,7 +159,7 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: warn
       KONG_ANONYMOUS_REPORTS: 'off'
-      KONG_PLUGINS: bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier
+      KONG_PLUGINS: bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier,codestra-private-surface,codestra-resource-guard
       KONG_LUA_SSL_TRUSTED_CERTIFICATE: /run/secrets/trust_ca
       KONG_ROLE: data_plane
       KONG_DATABASE: 'off'
@@ -125,6 +181,7 @@ services:
         source CIDRs required}
       KONG_REAL_IP_HEADER: X-Forwarded-For
       KONG_REAL_IP_RECURSIVE: 'on'
+      CODESTRA_RUNTIME_APPLY_AUTHORIZED: 'false'
     networks:
     - kong_proxy
     - kong_cluster
@@ -147,11 +204,46 @@ services:
     - kong
     - docker-start
     volumes:
+    - type: bind
+      source: ../kong/plugins/codestra-authz
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-authz
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-request-context
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-request-context
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-webhook-verifier
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-webhook-verifier
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-private-surface
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-private-surface
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-resource-guard
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-resource-guard
+      read_only: true
     - dp1_prefix:/usr/local/kong
     - type: bind
-      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook secret directory required}
+      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook
+        secret directory required}
       target: /run/secrets/webhooks
       read_only: true
+    - type: bind
+      source: ./runtime-guard.sh
+      target: /etc/codestra/runtime-guard.sh
+      read_only: true
+    - type: bind
+      source: ./codestra-kong-entrypoint.sh
+      target: /usr/local/bin/codestra-kong-entrypoint
+      read_only: true
+    healthcheck:
+      test: *id003
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
   kong-dp-2:
     read_only: true
     user: 1000:1000
@@ -161,6 +253,8 @@ services:
     mem_limit: 1g
     cpus: '1.0'
     restart: 'no'
+    stop_signal: SIGQUIT
+    stop_grace_period: 300s
     tmpfs:
     - /tmp:rw,noexec,nosuid,size=64m
     image: ${KONG_PLATFORM_IMAGE_REPOSITORY:?reviewed gateway image repository required}@${KONG_PLATFORM_IMAGE_DIGEST:?immutable
@@ -169,6 +263,8 @@ services:
     - hybrid-source
     environment:
       KONG_PREFIX: /usr/local/kong
+      KONG_NGINX_DAEMON: 'off'
+      KONG_NGINX_MAIN_WORKER_SHUTDOWN_TIMEOUT: 240s
       KONG_ADMIN_LISTEN: 'off'
       KONG_ADMIN_GUI_LISTEN: 'off'
       KONG_STATUS_LISTEN: 0.0.0.0:8100
@@ -178,7 +274,7 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: warn
       KONG_ANONYMOUS_REPORTS: 'off'
-      KONG_PLUGINS: bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier
+      KONG_PLUGINS: bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier,codestra-private-surface,codestra-resource-guard
       KONG_LUA_SSL_TRUSTED_CERTIFICATE: /run/secrets/trust_ca
       KONG_ROLE: data_plane
       KONG_DATABASE: 'off'
@@ -200,6 +296,7 @@ services:
         source CIDRs required}
       KONG_REAL_IP_HEADER: X-Forwarded-For
       KONG_REAL_IP_RECURSIVE: 'on'
+      CODESTRA_RUNTIME_APPLY_AUTHORIZED: 'false'
     networks:
     - kong_proxy
     - kong_cluster
@@ -222,11 +319,46 @@ services:
     - kong
     - docker-start
     volumes:
+    - type: bind
+      source: ../kong/plugins/codestra-authz
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-authz
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-request-context
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-request-context
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-webhook-verifier
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-webhook-verifier
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-private-surface
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-private-surface
+      read_only: true
+    - type: bind
+      source: ../kong/plugins/codestra-resource-guard
+      target: /usr/local/share/lua/5.1/kong/plugins/codestra-resource-guard
+      read_only: true
     - dp2_prefix:/usr/local/kong
     - type: bind
-      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook secret directory required}
+      source: ${GATEWAY_WEBHOOK_SECRET_DIRECTORY:?approved per-integration webhook
+        secret directory required}
       target: /run/secrets/webhooks
       read_only: true
+    - type: bind
+      source: ./runtime-guard.sh
+      target: /etc/codestra/runtime-guard.sh
+      read_only: true
+    - type: bind
+      source: ./codestra-kong-entrypoint.sh
+      target: /usr/local/bin/codestra-kong-entrypoint
+      read_only: true
+    healthcheck:
+      test: *id003
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
 networks:
   edge_internal:
     external: true

@@ -15,3 +15,19 @@ plugins:
       consumer_claim:
         - azp
       cache_tokens_salt: "{vault://env/kong-oidc-cache-tokens-salt}"
+      audience_required:
+        - middleware-api
+      issuers_allowed:
+        - https://auth.codestra.co/realms/codestra
+      bearer_token_param_type:
+        - header
+      verify_signature: true
+      verify_claims: true
+      ssl_verify: true
+      consumer_by:
+        - username
+      consumer_optional: false
+      cache_ttl: 300
+      cache_ttl_max: 300
+      rediscovery_lifetime: 30
+      leeway: 0

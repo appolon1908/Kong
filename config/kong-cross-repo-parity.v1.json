@@ -19,7 +19,7 @@
     },
     "middleware": {
       "repository": "ingtrader21-spec/Middleware-",
-      "source_sha": "2862af0aa97367b18cb360af69212abe4243a1ac",
+      "source_sha": "bd406a6508c8095a3f23b35149a2eebcb94c94c6",
       "contract_path": "deploy/public-api-route-contract.json",
       "contract_sha256_path": "deploy/public-api-route-contract.sha256",
       "contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
@@ -33,8 +33,15 @@
     },
     "caddy": {
       "repository": "ingtrader21-spec/Caddy",
-      "source_sha": "56fd73d1647f7023cb07bdb14b1f72522c7b48d8",
-      "pull_request": 175,
+      "source_sha": "22c6d51ed2f5340139177131fb810e787f0f7550",
+      "source_ref": "main",
+      "merged_pull_requests": [
+        175,
+        177,
+        178,
+        179,
+        180
+      ],
       "public_edge_registry": "config/public-edge-registry.v1.json",
       "webhook_edge_registry": "config/webhook-edge-registry.v1.json",
       "edge_contract_chain": "config/edge-contract-chain.v1.json",

@@ -41,13 +41,15 @@ def module():
 
 def metadata():
     return {"id": "a" * 64, "running": True, "network_mode": "codestra_edge", "ports": {},
-            "service": "kong-gateway", "listeners": [
+            "service": "kong-cp", "project": "codestra-gateway-hybrid",
+            "runtime": ["KONG_ROLE=control_plane", "KONG_DATABASE=postgres", "KONG_PROXY_LISTEN=off", None],
+            "listeners": [
                 "KONG_ADMIN_LISTEN=127.0.0.1:8001", "KONG_ADMIN_GUI_LISTEN=off", None]}
 
 
 def stubbed(channel, monkeypatch, stdout=b'{"data": []}\n200', returncode=0):
     calls = []
-    monkeypatch.setattr(channel, "verify_container", lambda container: "a" * 64)
+    monkeypatch.setattr(channel, "verify_container", lambda container, **kwargs: "a" * 64)
 
     def run(argv, **kwargs):
         calls.append((argv, kwargs))
@@ -167,8 +169,9 @@ def test_channel_and_read_only_capture_require_the_same_admin_contract():
     assert channel.DOCKER == capture.DOCKER
     assert channel.ADMIN_ORIGIN == HOST_ADMIN
     assert channel.ADMIN_PORTS == ("8001/tcp", "8444/tcp", "8002/tcp", "8445/tcp")
-    environment = yaml.safe_load((ROOT / "deploy/kong/compose.kong.yaml").read_text())[
-        "services"]["kong-gateway"]["environment"]
+    # Administrative capture belongs to the hybrid CP; the DP has no Admin API.
+    environment = yaml.safe_load((ROOT / "deploy/gateway-platform/compose.hybrid.yaml").read_text())[
+        "services"]["kong-cp"]["environment"]
     assert channel.REQUIRED_LISTENERS == {
         f"KONG_ADMIN_LISTEN={environment['KONG_ADMIN_LISTEN']}",
         f"KONG_ADMIN_GUI_LISTEN={environment['KONG_ADMIN_GUI_LISTEN']}"}
@@ -342,7 +345,7 @@ def test_oversized_replies_fail_closed(monkeypatch):
 def test_container_replacement_during_the_operation_is_detected(monkeypatch):
     channel = module()
     identities = iter(["a" * 64, "b" * 64])
-    monkeypatch.setattr(channel, "verify_container", lambda container: next(identities))
+    monkeypatch.setattr(channel, "verify_container", lambda container, **kwargs: next(identities))
     assert channel.container_identity() == "a" * 64
     with pytest.raises(channel.AdminError):
         channel.confirm_unchanged()
@@ -352,7 +355,7 @@ def test_every_private_request_rechecks_the_named_container(monkeypatch):
     channel = module()
     calls = stubbed(channel, monkeypatch)
     identities = iter(["a" * 64, "a" * 64, "b" * 64])
-    monkeypatch.setattr(channel, "verify_container", lambda container: next(identities))
+    monkeypatch.setattr(channel, "verify_container", lambda container, **kwargs: next(identities))
     assert channel.admin_request("GET", "/status") == {"data": []}
     with pytest.raises(channel.AdminError, match="container changed"):
         channel.admin_request("GET", "/status")
@@ -363,7 +366,7 @@ def test_private_response_is_rejected_if_container_changes_during_request(monkey
     channel = module()
     calls = stubbed(channel, monkeypatch)
     identities = iter(["a" * 64, "b" * 64])
-    monkeypatch.setattr(channel, "verify_container", lambda container: next(identities))
+    monkeypatch.setattr(channel, "verify_container", lambda container, **kwargs: next(identities))
     with pytest.raises(channel.AdminError, match="container changed"):
         channel.admin_request("GET", "/status")
     assert len(calls) == 1
@@ -575,3 +578,110 @@ def test_collection_rejects_pagination_traversal_before_second_fetch(monkeypatch
     with pytest.raises(RuntimeError):
         client.all_rows(HOST_ADMIN, "/routes")
     assert len(calls) == 1
+
+def test_hybrid_control_plane_is_accepted_by_admin_validator(monkeypatch):
+    channel = module()
+    info = management_metadata()
+    monkeypatch.setattr(channel, "run_json", lambda args: info)
+    assert channel.verify_container("codestra-gateway-hybrid-kong-cp-1") == "a" * 64
+
+def test_hybrid_data_plane_is_rejected_by_admin_validator(monkeypatch):
+    channel = module()
+    info = metadata()
+    info["service"] = "kong-dp-1"
+    info["listeners"] = ["KONG_ADMIN_LISTEN=off", "KONG_ADMIN_GUI_LISTEN=off", None]
+    monkeypatch.setattr(channel, "run_json", lambda args: info)
+    with pytest.raises(channel.AdminError):
+        channel.verify_container("codestra-gateway-hybrid-kong-dp-1")
+
+
+def management_metadata(service="kong-cp", approval=None):
+    info = metadata()
+    info.update(service=service,
+                project="codestra-gateway-hybrid" if service == "kong-cp" else "codestra-gateway-traditional",
+                runtime=["KONG_ROLE=" + ("control_plane" if service == "kong-cp" else "traditional"),
+                         "KONG_DATABASE=postgres", "KONG_PROXY_LISTEN=off"])
+    if approval is not None:
+        info["runtime"].append("CODESTRA_TRADITIONAL_APPROVAL=" + approval)
+    info["runtime"].append(None)
+    return info
+
+
+def test_default_admin_target_resolves_to_hybrid_control_plane(monkeypatch):
+    channel = module()
+    hybrid = yaml.safe_load((ROOT / "deploy/gateway-platform/compose.hybrid.yaml").read_text())
+    selected = []
+    def inspect(argv):
+        selected.append(argv[-1])
+        assert argv[-1] == hybrid["name"] + "-kong-cp-1"
+        return management_metadata()
+    monkeypatch.setattr(channel, "run_json", inspect)
+    assert channel.container_identity() == "a" * 64
+    assert selected == ["codestra-gateway-hybrid-kong-cp-1"]
+    assert hybrid["services"]["kong-cp"]["environment"]["KONG_ADMIN_LISTEN"] == "127.0.0.1:8001"
+
+
+@pytest.mark.parametrize("service", ["kong-gateway", "kong-dp-1", "kong-dp-2", "kong-proxy-1"])
+def test_data_plane_cannot_be_selected_even_with_loopback_admin(monkeypatch, service):
+    channel = module()
+    info = management_metadata()
+    info["service"] = service
+    monkeypatch.setattr(channel, "run_json", lambda argv: info)
+    with pytest.raises(channel.AdminError):
+        channel.verify_container("selected-node")
+
+
+@pytest.mark.parametrize("damage", ["wrong-project", "data-plane-role", "database-off", "proxy-enabled", "duplicate-role"])
+def test_control_plane_selection_requires_reviewed_management_role(monkeypatch, damage):
+    channel = module()
+    info = management_metadata()
+    if damage == "wrong-project":
+        info["project"] = "unreviewed-stack"
+    elif damage == "data-plane-role":
+        info["runtime"][0] = "KONG_ROLE=data_plane"
+    elif damage == "database-off":
+        info["runtime"][1] = "KONG_DATABASE=off"
+    elif damage == "proxy-enabled":
+        info["runtime"][2] = "KONG_PROXY_LISTEN=0.0.0.0:8443 ssl"
+    else:
+        info["runtime"].insert(0, "KONG_ROLE=control_plane")
+    monkeypatch.setattr(channel, "run_json", lambda argv: info)
+    with pytest.raises(channel.AdminError):
+        channel.verify_container(channel.DEFAULT_CONTAINER)
+
+
+def test_traditional_management_requires_matching_explicit_approval(monkeypatch):
+    channel = module()
+    info = management_metadata("kong-management", "KONG:fallback-approved")
+    monkeypatch.setattr(channel, "run_json", lambda argv: info)
+    assert channel.verify_container("codestra-gateway-traditional-kong-management-1",
+        traditional_approval="KONG:fallback-approved") == "a" * 64
+
+
+@pytest.mark.parametrize("approval", [None, "", "yes", "KONG:", "KONG:different"])
+def test_traditional_management_rejects_missing_or_mismatched_approval(monkeypatch, approval):
+    channel = module()
+    info = management_metadata("kong-management", "KONG:fallback-approved")
+    monkeypatch.setattr(channel, "run_json", lambda argv: info)
+    with pytest.raises(channel.AdminError):
+        channel.verify_container("codestra-gateway-traditional-kong-management-1",
+            traditional_approval=approval)
+
+
+def test_selected_approved_management_is_reverified_after_private_request(monkeypatch):
+    channel = module()
+    inspections = []
+    commands = []
+    def inspect(argv):
+        inspections.append(argv[-1])
+        return management_metadata("kong-management", "KONG:fallback-approved")
+    def execute(argv, **kwargs):
+        commands.append(argv)
+        return SimpleNamespace(returncode=0, stdout=b'{"data": []}\n200', stderr=b"")
+    monkeypatch.setattr(channel, "run_json", inspect)
+    monkeypatch.setattr(channel.subprocess, "run", execute)
+    target = "codestra-gateway-traditional-kong-management-1"
+    assert channel.admin_request("GET", "/routes", container=target,
+        traditional_approval="KONG:fallback-approved") == {"data": []}
+    assert inspections == [target, target]
+    assert commands[0][3:6] == ["exec", "a" * 64, "curl"]

@@ -5,7 +5,7 @@ Every release tool and workflow derives the repository, registry namespace and
 image reference from ``config/kong-release-registry-contract.v1.json`` and
 proves that the process is running inside that repository. A historical owner
 literal never appears in a tool or workflow again: the repository was
-transferred once (``appolon1908-hue`` -> ``ingtrader21-spec``) and the release
+transferred (``appolon1908-hue`` -> ``ingtrader21-spec`` -> ``appolon1908``) and the release
 workflow kept publishing to the stale namespace, which a repository-scoped
 GITHUB_TOKEN cannot write.
 

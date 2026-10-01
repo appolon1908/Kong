@@ -456,9 +456,9 @@ def test_staging_and_production_must_not_share_an_issuer(repo):
 @pytest.mark.parametrize(("mutate", "match"), [
     (lambda g: g["ports"].append("0.0.0.0:8001:8001"), "Admin, Manager and Status must not be published|host loopback"),
     (lambda g: g["ports"].append("127.0.0.1:8100:8100"), "must not be published"),
-    (lambda g: g["environment"].update(KONG_ADMIN_LISTEN="0.0.0.0:8001"), "container-loopback"),
+    (lambda g: g["environment"].update(KONG_ADMIN_LISTEN="0.0.0.0:8001"), "disabled on data planes"),
     (lambda g: g["environment"].update(KONG_ADMIN_GUI_LISTEN="0.0.0.0:8002"), "Manager must remain off"),
-    (lambda g: g["environment"].update(KONG_PG_SSL_VERIFY="off"), "database TLS verification"),
+    (lambda g: g["environment"].update(KONG_PG_SSL_VERIFY="off"), "data plane database settings"),
     (lambda g: g["environment"].update(KONG_TRUSTED_IPS="0.0.0.0/0"), "trusted_ips must be required"),
     (lambda g: g["environment"].update(KONG_UNTRUSTED_LUA="on"), "sandboxed"),
     (lambda g: g["environment"].update(KONG_HEADERS="server_tokens"), "server headers"),

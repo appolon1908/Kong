@@ -42,7 +42,7 @@ vaults = env
 # openid-connect is a licensed Kong plugin. It is not present in Kong OSS and
 # it does not load on kong/kong-gateway in free mode. Without a valid license
 # the declarative config in deploy/kong/control-plane.yml is rejected at load.
-plugins = bundled
+plugins = bundled,codestra-authz,codestra-request-context,codestra-webhook-verifier,codestra-private-surface,codestra-resource-guard
 license_path = /run/secrets/kong_license
 
 # ---------------------------------------------------------------------------
@@ -51,7 +51,8 @@ license_path = /run/secrets/kong_license
 # Container-internal addresses. Publishing is owned by compose.kong.yaml, which
 # binds the proxy to host loopback only. The Admin API is never published.
 proxy_listen = 0.0.0.0:8000
-admin_listen = 127.0.0.1:8001
+admin_listen = off
+admin_gui_listen = off
 status_listen = 0.0.0.0:8100
 
 # Do not advertise the gateway or its version to public clients.
@@ -64,18 +65,17 @@ headers = off
 # operations/kong-database/. kong_runtime is the least-privilege runtime role
 # from operations/kong-database/roles.sql; migrations use kong_migration_admin
 # under a separate approved change.
-database = postgres
-pg_host = REQUIRED_KONG_DB_STABLE_ENDPOINT
-pg_port = 5432
-pg_database = kong
-pg_user = kong_runtime
-# Vault reference form, for a node configured from this file. The compose
-# deployment instead uses KONG_PG_PASSWORD_FILE, which the official entrypoint
-# reads from a mounted Docker secret; that mechanism only works for real Kong
-# options, which is why the gateway secret and the Redis password cannot use it.
-pg_password = {vault://env/kong-database-runtime-password}
-pg_ssl = on
-pg_ssl_verify = on
+# Hybrid data plane only. PostgreSQL credentials belong solely to the CP.
+role = data_plane
+database = off
+cluster_mtls = pki
+cluster_control_plane = kong-cp.internal.codestra:8005
+cluster_telemetry_endpoint = kong-cp.internal.codestra:8006
+cluster_server_name = kong-cp.internal.codestra
+cluster_telemetry_server_name = kong-cp.internal.codestra
+cluster_ca_cert = /run/secrets/cluster_ca
+cluster_cert = /run/secrets/dp_cert
+cluster_cert_key = /run/secrets/dp_key
 lua_ssl_trusted_certificate = system
 
 # ---------------------------------------------------------------------------
