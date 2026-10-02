@@ -20,9 +20,9 @@ EXPECTED_ROUTES = {
 }
 EXPECTED_LEGACY = {"/v1/crm", "/v1/email", "/v1/sms", "/v1/webhooks", "/v1/sms/dlr/telnexa"}
 EXPECTED_DEPENDENCIES = {
-    "middlewareRepository": "appolon1908-hue/Middleware-",
+    "middlewareRepository": "appolon1908/Middleware-",
     "middlewarePullRequest": 82,
-    "keycloakRepository": "appolon1908-hue/Keycloak",
+    "keycloakRepository": "appolon1908/Keycloak",
     "keycloakPullRequest": 60,
 }
 EXPECTED_SERVICE = {

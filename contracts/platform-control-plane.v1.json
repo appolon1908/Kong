@@ -3,10 +3,10 @@
   "contract_id": "codestra.platform-control-plane",
   "status": "APPROVED_PRODUCTION",
   "repositories": {
-    "orchestration": "appolon1908-hue/N8N",
-    "write_authority": "appolon1908-hue/Middleware-",
-    "business_authority": "appolon1908-hue/Odoo",
-    "gateway_authority": "appolon1908-hue/Kong"
+    "orchestration": "appolon1908/N8N",
+    "write_authority": "appolon1908/Middleware-",
+    "business_authority": "appolon1908/Odoo",
+    "gateway_authority": "appolon1908/Kong"
   },
   "flow": [
     "n8n -> kong -> middleware",

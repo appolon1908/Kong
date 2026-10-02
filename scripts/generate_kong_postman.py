@@ -121,7 +121,7 @@ def derive_cases(contract_path: Path) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "kind": "codestra.kong.postman-route-cases.v1",
-        "source_repository": "ingtrader21-spec/Middleware-",
+        "source_repository": "appolon1908/Middleware-",
         "source_sha": "2862af0aa97367b18cb360af69212abe4243a1ac",
         "source_contract_path": "deploy/public-api-route-contract.json",
         "source_contract_sha256": digest,

@@ -7,7 +7,7 @@ authorizes no runtime change.
 
 ```text
 Internet
-  │  public TLS, hostnames, certificates, HTTP→HTTPS, edge logging   (Caddy, appolon1908-hue/Caddy)
+  │  public TLS, hostnames, certificates, HTTP→HTTPS, edge logging   (Caddy, appolon1908/Caddy)
   ▼
 Caddy (host process)  ──plain HTTP──▶  127.0.0.1:8000  (published Kong proxy listener, host loopback only)
                                             │

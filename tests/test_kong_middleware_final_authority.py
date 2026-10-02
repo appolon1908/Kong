@@ -102,7 +102,7 @@ def test_provisional_v3_authority_is_removed_and_folded_into_main_authority() ->
 def test_canonical_and_generated_manifests_are_8095_and_complete() -> None:
     canonical = load_json(CANONICAL)
     edge = canonical["middlewareEdgeContract"]
-    assert edge["source"] == "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json"
+    assert edge["source"] == "appolon1908/Middleware-:deploy/public-api-route-contract.json"
     assert edge["sha256"] == EXPECTED_DIGEST
     assert canonical["runtimeApplyAuthorized"] is False
     assert canonical["providerEffectsEnabled"] is False

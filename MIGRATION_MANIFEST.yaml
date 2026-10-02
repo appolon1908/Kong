@@ -1034,7 +1034,7 @@ source_files:
   sha256: 94677658d586dac4d91ec3a9c86b1aab19e670f5eae3ad3d1f24e3cce237c5ba
   size: 702
 source_protected_sha: f3a16308194378a7b1580e04943dc98d64619077
-source_repository: appolon1908-hue/codestra-production-platform
+source_repository: appolon1908/codestra-production-platform
 source_route_pr: 130
 source_route_sha: b340023f5e74e1f9154fc97590c9b6a48caa8b99
 target_hardening:
@@ -1054,4 +1054,4 @@ target_hardening:
   target_size: 2996
 target_head_before_manifest: 32a092670b68a0d45c3d595813bb152f7e737bf4
 target_manifest_updated_at: '2026-08-26T21:36:49.881497+00:00'
-target_repository: appolon1908-hue/Kong
+target_repository: appolon1908/Kong

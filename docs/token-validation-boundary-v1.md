@@ -2,7 +2,7 @@
 
 Part of the [Kong API Gateway Control Plane V1](KONG_GATEWAY_CONTROL_PLANE_V1.md).
 
-Keycloak (`appolon1908-hue/Keycloak`) is the identity authority: it issues
+Keycloak (`appolon1908/Keycloak`) is the identity authority: it issues
 tokens, owns users, passwords, MFA and clients. Kong is the gateway validation
 point: it verifies a presented token against the realm and enforces the
 route's audience and scope prerequisites. Middleware makes the business

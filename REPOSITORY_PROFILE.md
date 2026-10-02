@@ -2,7 +2,7 @@
 
 ## Identity
 
-- **Repository:** `appolon1908-hue/Kong`
+- **Repository:** `appolon1908/Kong`
 - **Category:** Platform edge — API gateway
 - **Visibility:** `private`
 - **Default branch:** `main`
@@ -49,4 +49,4 @@ Routes and protects platform APIs through authentication integration, authorizat
 
 ## Account-wide catalog
 
-See `appolon1908-hue/documentaions/REPOSITORY_CATALOG.md`.
+See `appolon1908/documentaions/REPOSITORY_CATALOG.md`.

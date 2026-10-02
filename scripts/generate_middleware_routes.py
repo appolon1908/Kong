@@ -343,7 +343,7 @@ def main() -> None:
     canonical["runtimeApplyAuthorized"] = False
     canonical["providerEffectsEnabled"] = False
     canonical["middlewareEdgeContract"] = {
-        "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
+        "source": "appolon1908/Middleware-:deploy/public-api-route-contract.json",
         "vendoredCopy": "config/middleware-public-api-route-contract.v1.json",
         "schema": contract["schema"],
         "sha256": digest,

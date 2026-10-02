@@ -1,6 +1,6 @@
 # Communications Platform Gateway Authority
 
-`appolon1908-hue/Kong` is the principal API gateway and security-policy authority for the Codestra communications platform.
+`appolon1908/Kong` is the principal API gateway and security-policy authority for the Codestra communications platform.
 
 ## Kong owns
 

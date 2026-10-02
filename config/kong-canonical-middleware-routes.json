@@ -5,7 +5,7 @@
   "legacyHost": "api.codestra.agency",
   "legacyHostEnabled": false,
   "middlewareEdgeContract": {
-    "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
+    "source": "appolon1908/Middleware-:deploy/public-api-route-contract.json",
     "vendoredCopy": "config/middleware-public-api-route-contract.v1.json",
     "schema": "codestra.middleware.public-api-route-contract.v2",
     "sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",

@@ -10,7 +10,7 @@ governs.
                         │
                         ▼
                  ┌─────────────┐   HOW does traffic enter securely?
-                 │    CADDY    │   public TLS, hostnames, edge logging  (appolon1908-hue/Caddy)
+                 │    CADDY    │   public TLS, hostnames, edge logging  (appolon1908/Caddy)
                  └──────┬──────┘
                         │ 127.0.0.1:8000, X-Forwarded-* trusted only from KONG_TRUSTED_IPS
                         ▼

@@ -49,7 +49,7 @@ assert current["service_port"] == 8095
 assert current["service_protocol"] == "http"
 assert current["service_enabled"] is False
 assert current["mutation_authorized"] is False
-assert current["evidence_url"] == "https://github.com/appolon1908-hue/Kong/pull/30"
+assert current["evidence_url"] == "https://github.com/appolon1908/Kong/pull/30"
 denied_aliases = set(current["ambiguous_aliases_denied"])
 assert denied_aliases == {"appolon-middleware-integration-api"}
 legacy = current["retired_legacy_runtime"]

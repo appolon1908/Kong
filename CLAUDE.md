@@ -2,7 +2,7 @@
 ## Claude Code — Codestra continuation contract
 
 Read first:
-https://github.com/ingtrader21-spec/codestra/blob/main/docs/AGENT-CONTINUATION-PROTOCOL.md
+https://github.com/appolon1908/codestra/blob/main/docs/AGENT-CONTINUATION-PROTOCOL.md
 
 Then read `AGENTS.md` and `.codestra-mission/*`.
 

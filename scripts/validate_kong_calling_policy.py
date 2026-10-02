@@ -17,7 +17,7 @@ LUA_PATH = ROOT / "deploy/kong/calling-policy.lua"
 RENDERER_PATH = ROOT / "scripts/render_kong_calling_routes.py"
 
 DIGEST = "b39cdffe56a8185c91174228f0423df68b1137f34875f6ee52f9914f904bf724"
-AUTHORITY = "appolon1908-hue/codestra-production-platform#257"
+AUTHORITY = "appolon1908/codestra-production-platform#257"
 
 EXPECTED_LOCK = {
     "version": "1.0.0",

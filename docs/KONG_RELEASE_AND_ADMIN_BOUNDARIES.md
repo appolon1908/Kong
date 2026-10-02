@@ -99,7 +99,7 @@ the upstream Kong digest **only on protected main**. The image namespace is not 
 literal: `tools/release_contract.py` derives `ghcr.io/<repository owner>/kong-standby-auth`
 from `config/kong-release-registry-contract.v1.json` and the workflow proves the
 running repository matches it before `docker login` (the repository was transferred
-from `appolon1908-hue` and the stale namespace made every publication fail). The
+from `appolon1908` and the stale namespace made every publication fail). The
 build is verified (`tools/verify_standby_image.py`) before it is published with
 BuildKit provenance and SBOM attestations, the registry digest is re-read and must
 equal the built digest, the attestations are extracted, and the release manifest is

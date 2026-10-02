@@ -8521,7 +8521,7 @@
     "runtimeApplyAuthorized": false,
     "routeAuthorityOwnedByLaneA": true,
     "source": {
-      "middlewareRepository": "ingtrader21-spec/Middleware-",
+      "middlewareRepository": "appolon1908/Middleware-",
       "middlewareCommit": "2862af0aa97367b18cb360af69212abe4243a1ac",
       "routeContractSha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
       "routeCount": 117,
@@ -8530,7 +8530,7 @@
         "denied": 10,
         "private_only": 2
       },
-      "keycloakRepository": "ingtrader21-spec/Keycloak",
+      "keycloakRepository": "appolon1908/Keycloak",
       "identitySourceCommit": "45a487d71a516ae3039b00c250752897469ffe7a"
     },
     "canonicalMiddlewareAudience": "middleware-api",

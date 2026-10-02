@@ -3,8 +3,8 @@
   "status": "PROPOSED_UNVERIFIED",
   "purpose": "Keycloak browser-flow protection for the n8n Community Edition editor host. n8n Community Edition has no enterprise SSO, so the gateway is the only place an OIDC check can be enforced before the editor is reached.",
   "applies_to_repositories": [
-    "appolon1908-hue/Caddy",
-    "appolon1908-hue/N8N"
+    "appolon1908/Caddy",
+    "appolon1908/N8N"
   ],
   "service": {
     "name": "codestra-n8n-editor",
@@ -80,7 +80,7 @@
     "legacy_jwt_validation_retained": false
   },
   "edge_boundary": {
-    "terminating_edge": "appolon1908-hue/Caddy",
+    "terminating_edge": "appolon1908/Caddy",
     "edge_host_file": "sites/automation.codestra.co.caddy",
     "edge_admin_cidr_environment_variable": "CADDY_EDITOR_ADMIN_CIDRS",
     "edge_authenticates": false,
@@ -93,6 +93,6 @@
     "Promotion evidence proves that an otherwise valid editor user without the codestra-n8n-editor realm role receives HTTP 403 from Kong.",
     "An unauthenticated request to the editor host is refused by the gateway before it reaches n8n, with evidence captured.",
     "n8n native owner authentication remains enabled behind the gateway, so a gateway bypass alone grants no editor access.",
-    "Session lifetime, idle timeout, and cookie flags are observed in force and captured as the session-policy evidence recorded in appolon1908-hue/N8N config/n8n-policy.json."
+    "Session lifetime, idle timeout, and cookie flags are observed in force and captured as the session-policy evidence recorded in appolon1908/N8N config/n8n-policy.json."
   ]
 }

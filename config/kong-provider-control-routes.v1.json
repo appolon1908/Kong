@@ -3,9 +3,9 @@
   "status": "PREPARED_DISABLED",
   "runtimeApplyAuthorized": false,
   "dependencies": {
-    "middlewareRepository": "appolon1908-hue/Middleware-",
+    "middlewareRepository": "appolon1908/Middleware-",
     "middlewarePullRequest": 82,
-    "keycloakRepository": "appolon1908-hue/Keycloak",
+    "keycloakRepository": "appolon1908/Keycloak",
     "keycloakPullRequest": 60
   },
   "issuer": "https://auth.codestra.co/realms/codestra",

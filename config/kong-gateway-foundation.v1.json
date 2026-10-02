@@ -14,22 +14,22 @@
   "authorities": {
     "edge": {
       "owner": "caddy",
-      "repository": "appolon1908-hue/Caddy",
+      "repository": "appolon1908/Caddy",
       "question": "HOW does traffic enter securely?"
     },
     "gateway": {
       "owner": "kong",
-      "repository": "appolon1908-hue/Kong",
+      "repository": "appolon1908/Kong",
       "question": "WHICH API/service route is reachable and which gateway prerequisites apply?"
     },
     "identity": {
       "owner": "keycloak",
-      "repository": "appolon1908-hue/Keycloak",
+      "repository": "appolon1908/Keycloak",
       "question": "WHO is the identity?"
     },
     "businessAuthorization": {
       "owner": "middleware",
-      "repository": "appolon1908-hue/Middleware-",
+      "repository": "appolon1908/Middleware-",
       "question": "MAY this identity execute this command on this resource in this environment?"
     },
     "businessState": {

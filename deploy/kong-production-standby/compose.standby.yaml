@@ -3,9 +3,9 @@ services:
     # Production and staging consume only the immutable image published by the
     # protected release-evidence workflow to the namespace fixed by
     # config/kong-release-registry-contract.v1.json (the repository owner's
-    # namespace after the transfer from appolon1908-hue). Building or retagging
+    # namespace after the transfer from appolon1908). Building or retagging
     # at deploy time is intentionally unsupported.
-    image: ghcr.io/ingtrader21-spec/kong-standby-auth@${KONG_STANDBY_AUTH_IMAGE_DIGEST:?KONG_STANDBY_AUTH_IMAGE_DIGEST must be an immutable sha256 digest}
+    image: ghcr.io/appolon1908/kong-standby-auth@${KONG_STANDBY_AUTH_IMAGE_DIGEST:?KONG_STANDBY_AUTH_IMAGE_DIGEST must be an immutable sha256 digest}
     restart: unless-stopped
     environment:
       DATABASE_URL_FILE: /run/secrets/identity_registry_database_url

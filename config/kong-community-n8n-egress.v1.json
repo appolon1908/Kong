@@ -50,10 +50,10 @@
     "retired_legacy_runtime": {
       "host": "appolon-middleware-integration-api",
       "port": 8080,
-      "evidence_url": "https://github.com/appolon1908-hue/Kong/pull/30",
+      "evidence_url": "https://github.com/appolon1908/Kong/pull/30",
       "note": "PR #30 read-only topology evidence bound the /v1/integrations/n8n aliases to this runtime. Those aliases are now denied by the canonical contract and no Kong route may target this host or port. The deployed Docker alias for middleware-integration-api must be re-collected with the topology collector before any runtime apply, which stays unauthorized."
     },
-    "evidence_url": "https://github.com/appolon1908-hue/Kong/pull/30",
+    "evidence_url": "https://github.com/appolon1908/Kong/pull/30",
     "mutation_authorized": false
   },
   "promotion_gates": {

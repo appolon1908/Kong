@@ -80,7 +80,7 @@ def test_the_terminating_edge_authenticates_nothing():
     boundary = SPEC["edge_boundary"]
     assert boundary["edge_authenticates"] is False
     assert boundary["gateway_authenticates"] is True
-    assert boundary["terminating_edge"] == "appolon1908-hue/Caddy"
+    assert boundary["terminating_edge"] == "appolon1908/Caddy"
 
 
 def test_no_credential_material_is_present_in_the_contract():

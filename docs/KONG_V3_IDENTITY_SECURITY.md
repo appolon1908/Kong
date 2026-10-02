@@ -8,10 +8,10 @@ The route/upstream authority remains Lane A. Lane B owns the security projection
 
 ## Frozen authorities
 
-- Middleware: `ingtrader21-spec/Middleware-@2862af0aa97367b18cb360af69212abe4243a1ac`
+- Middleware: `appolon1908/Middleware-@2862af0aa97367b18cb360af69212abe4243a1ac`
 - Middleware route digest: `9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b`
 - Routes: **117 = 105 shared_edge + 10 denied + 2 private_only**
-- Keycloak: `ingtrader21-spec/Keycloak@45a487d71a516ae3039b00c250752897469ffe7a`
+- Keycloak: `appolon1908/Keycloak@45a487d71a516ae3039b00c250752897469ffe7a`
 - Canonical Middleware audience: `middleware-api`
 - Runtime apply: **disabled**
 

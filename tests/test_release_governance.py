@@ -86,4 +86,4 @@ def test_standby_compose_forbids_deploy_time_build_and_floating_tag():
 
     assert STANDBY_IMAGE + "@${KONG_STANDBY_AUTH_IMAGE_DIGEST:?" in compose
     image_line = compose.split("image:")[1].splitlines()[0]
-    assert "appolon1908-hue" not in image_line
+    assert "appolon1908" not in image_line

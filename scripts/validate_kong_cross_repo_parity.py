@@ -254,7 +254,7 @@ def validate_caddy(config: dict[str, Any], repo: Path) -> dict[str, Any]:
     by_path = {str(row.get("path")): row for row in entries}
     for path in source["required_public_namespaces"]:
         row = by_path.get(path)
-        if not row or row.get("classification") != "CANONICAL" or row.get("gateway") != "ingtrader21-spec/Kong":
+        if not row or row.get("classification") != "CANONICAL" or row.get("gateway") != "appolon1908/Kong":
             raise ParityError(f"Caddy canonical Kong namespace missing: {path}")
         if row.get("legacy_fallback") is not False:
             raise ParityError(f"Caddy namespace may fall back to legacy: {path}")

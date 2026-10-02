@@ -1,6 +1,6 @@
 # Kong Prometheus contract
 
-Kong owns metric collection and the private Status API listener. `appolon1908-hue/Codestra-Prometheus` owns scraping, target labels, recording rules, alerts, and retention.
+Kong owns metric collection and the private Status API listener. `appolon1908/Codestra-Prometheus` owns scraping, target labels, recording rules, alerts, and retention.
 
 ## Metric collection
 

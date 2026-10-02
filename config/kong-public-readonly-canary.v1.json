@@ -6,21 +6,21 @@
     {
       "path": "/healthz",
       "methods": ["GET", "HEAD"],
-      "edgeAuthority": "appolon1908-hue/Caddy",
+      "edgeAuthority": "appolon1908/Caddy",
       "upstreamAuthority": "websocket-gateway",
       "kongRoute": null
     },
     {
       "path": "/readyz",
       "methods": ["GET", "HEAD"],
-      "edgeAuthority": "appolon1908-hue/Caddy",
+      "edgeAuthority": "appolon1908/Caddy",
       "upstreamAuthority": "websocket-gateway",
       "kongRoute": null
     },
     {
       "path": "/version",
       "methods": ["GET", "HEAD"],
-      "edgeAuthority": "appolon1908-hue/Caddy",
+      "edgeAuthority": "appolon1908/Caddy",
       "upstreamAuthority": "websocket-gateway",
       "kongRoute": null
     }

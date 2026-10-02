@@ -7,7 +7,7 @@
   "live_staging_probe_authorized": false,
   "sources": {
     "kong": {
-      "repository": "ingtrader21-spec/Kong",
+      "repository": "appolon1908/Kong",
       "frozen_base_sha": "ee86cdf870aebaac550a78a9617321ee48324589",
       "lane_branch": "mission/kong-v3-integration-parity-20260920",
       "contract_path": "config/middleware-public-api-route-contract.v1.json",
@@ -18,7 +18,7 @@
       "final_repin_required": true
     },
     "middleware": {
-      "repository": "ingtrader21-spec/Middleware-",
+      "repository": "appolon1908/Middleware-",
       "source_sha": "2862af0aa97367b18cb360af69212abe4243a1ac",
       "contract_path": "deploy/public-api-route-contract.json",
       "contract_sha256_path": "deploy/public-api-route-contract.sha256",
@@ -32,7 +32,7 @@
       "canonical_upstream": "middleware-integration-api:8095"
     },
     "caddy": {
-      "repository": "ingtrader21-spec/Caddy",
+      "repository": "appolon1908/Caddy",
       "source_sha": "56fd73d1647f7023cb07bdb14b1f72522c7b48d8",
       "pull_request": 175,
       "public_edge_registry": "config/public-edge-registry.v1.json",
@@ -51,7 +51,7 @@
       ]
     },
     "keycloak": {
-      "repository": "ingtrader21-spec/Keycloak",
+      "repository": "appolon1908/Keycloak",
       "source_sha": "45a487d71a516ae3039b00c250752897469ffe7a",
       "caller_contract_path": "config/contracts/middleware-caller-classification.v1.json",
       "token_matrix_path": "config/certification/v3-token-matrix.v1.json",

@@ -1,6 +1,6 @@
 {
   "schema": "codestra.kong.platform-api-read-routes.v1",
-  "authority": "appolon1908-hue/Middleware-#244,#245,#246,#249",
+  "authority": "appolon1908/Middleware-#244,#245,#246,#249",
   "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
   "runtimeApplyAuthorized": false,
   "host": "api.codestra.co",

@@ -84,7 +84,7 @@ services:
 
     ports:
       # Host loopback only. Caddy runs on the host and reaches the data plane at
-      # 127.0.0.1:8000 (CADDY_KONG_UPSTREAM in appolon1908-hue/Caddy). The Admin
+      # 127.0.0.1:8000 (CADDY_KONG_UPSTREAM in appolon1908/Caddy). The Admin
       # API and the status listener are deliberately not published: the Admin
       # API stays on container loopback, and the status listener is reachable
       # only over the private observability network.

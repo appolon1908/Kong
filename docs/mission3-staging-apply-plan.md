@@ -12,7 +12,7 @@ separately reviewed runtime change authorizes staging certification.
 | Item | Value / source |
 | --- | --- |
 | candidate `main` SHA | the protected `main` commit whose `release.yml` run produced `kong-release-<sha>` with `RELEASE_EVIDENCE=PASS`; recorded as `KONG_CERTIFIED_SOURCE_SHA` |
-| candidate image | `ghcr.io/ingtrader21-spec/kong-standby-auth@<standby_auth_image_digest>` from that release manifest (never a tag) |
+| candidate image | `ghcr.io/appolon1908/kong-standby-auth@<standby_auth_image_digest>` from that release manifest (never a tag) |
 | Kong image | `kong/kong-gateway:3.14.0.1-ubuntu@<kong_image_digest>` from the same manifest (`KONG_IMAGE_DIGEST`) |
 | release run | `KONG_CANDIDATE_RUN_ID`; `tools/verify_release_candidate.py` re-authenticates run, artifact digest, manifest sha256 and image digests before any promotion |
 | evidence | `release-manifest.json` verified by `tools/verify_release_evidence.py`; `standby-sbom.spdx.json` and `standby-provenance.json` bound by sha256 |

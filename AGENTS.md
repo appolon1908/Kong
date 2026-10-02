@@ -2,10 +2,10 @@
 ## Codestra continuation contract
 
 Canonical protocol:
-https://github.com/ingtrader21-spec/codestra/blob/main/docs/AGENT-CONTINUATION-PROTOCOL.md
+https://github.com/appolon1908/codestra/blob/main/docs/AGENT-CONTINUATION-PROTOCOL.md
 
 Quick start:
-https://github.com/ingtrader21-spec/codestra/blob/main/docs/AGENT-QUICKSTART.md
+https://github.com/appolon1908/codestra/blob/main/docs/AGENT-QUICKSTART.md
 
 Before changing code:
 1. Read `.codestra-mission/*` when present.

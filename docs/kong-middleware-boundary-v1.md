@@ -4,7 +4,7 @@ Part of the [Kong API Gateway Control Plane V1](KONG_GATEWAY_CONTROL_PLANE_V1.md
 Companion to `docs/MIDDLEWARE_EDGE_CONTRACT.md` (the pinned issue #58 contract).
 
 ```text
-Kong                                   Middleware (appolon1908-hue/Middleware-)
+Kong                                   Middleware (appolon1908/Middleware-)
   route identity                         re-validates signature, issuer, audience, scope, tenant
   authentication prerequisite   ──▶      MAY this identity execute this command on this resource
   audience / scope / tenant guard        in this environment?  (business authorization)

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2.0.0",
-  "repository": "appolon1908-hue/Kong",
+  "repository": "appolon1908/Kong",
   "classification": "runtime-infrastructure",
   "targetBranch": "codex/codestra-orbit-v2-kong",
   "adoptionMode": "n/a-no-rendered-interface",

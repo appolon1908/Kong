@@ -89,17 +89,17 @@ def good_manifest(stage: str = "protected-main-source-candidate", source: str = 
 
 def test_registry_contract_is_derived_from_the_current_repository_owner():
     document = json.loads(read(ROOT, REGISTRY_CONTRACT))
-    assert document["repository"]["fullName"] == "ingtrader21-spec/Kong"
+    assert document["repository"]["fullName"] == "appolon1908/Kong"
     assert document["registry"]["namespace"] == document["repository"]["owner"].lower()
-    assert document["registry"]["image"] == "ghcr.io/ingtrader21-spec/kong-standby-auth"
+    assert document["registry"]["image"] == "ghcr.io/appolon1908/kong-standby-auth"
     assert document["tagPolicy"]["mutableTagsAllowed"] is False
     assert "latest" in document["tagPolicy"]["forbiddenTags"]
     assert document["runtimeApplyAuthorized"] is False and document["providerEffectsEnabled"] is False
     former = {item["fullName"] for item in document["repository"]["formerNames"]}
-    assert former == {"appolon1908-hue/Kong"}
-    contract.assert_repository(document, "ingtrader21-spec/Kong", "ingtrader21-spec")
+    assert former == {"appolon1908/Kong"}
+    contract.assert_repository(document, "appolon1908/Kong", "appolon1908")
     with pytest.raises(contract.ContractError):
-        contract.assert_repository(document, "appolon1908-hue/Kong", "appolon1908-hue")
+        contract.assert_repository(document, "appolon1908/Kong", "appolon1908")
 
 
 def test_supply_chain_validator_accepts_the_committed_tree():
@@ -112,7 +112,7 @@ def test_supply_chain_validator_accepts_the_committed_tree():
 def test_release_workflows_bind_contract_before_login_and_verify_digest_sbom_provenance():
     for path in (RELEASE, PREFLIGHT):
         text = read(ROOT, path)
-        assert "appolon1908-hue" not in text
+        assert "appolon1908" not in text
         assert text.index("tools/release_contract.py") < text.index("docker login ghcr.io")
         assert "--provenance=mode=max" in text and "--sbom=true" in text and "--load" in text and "--push" in text
         assert text.index("--load") < text.index("--push")
@@ -130,7 +130,7 @@ def test_release_workflows_bind_contract_before_login_and_verify_digest_sbom_pro
 def test_release_tools_and_compose_use_the_contract_image():
     for tool in ("tools/generate_release_manifest.py", "tools/verify_release_candidate.py", "tools/verify_release_evidence.py"):
         text = read(ROOT, tool)
-        assert "ghcr.io/" not in text and "appolon1908-hue" not in text
+        assert "ghcr.io/" not in text and "appolon1908" not in text
     compose = read(ROOT, COMPOSE)
     assert contract.STANDBY_IMAGE + "@${KONG_STANDBY_AUTH_IMAGE_DIGEST:?" in compose
 
@@ -185,7 +185,7 @@ def test_built_image_config_checks_accept_the_expected_shape_only():
         "Architecture": "amd64", "Os": "linux",
         "Config": {"User": "65532:65532", "Cmd": ["uvicorn", "standby_auth:app", "--app-dir", "/app"], "Entrypoint": None,
                    "Labels": {"org.opencontainers.image.revision": SHA, "org.opencontainers.image.version": SHA,
-                              "org.opencontainers.image.source": "https://github.com/ingtrader21-spec/Kong"},
+                              "org.opencontainers.image.source": "https://github.com/appolon1908/Kong"},
                    "Env": ["PATH=/usr/local/bin", "LANG=C.UTF-8", "GPG_KEY=x", "PYTHON_VERSION=3.12.14", "PYTHON_SHA256=y"],
                    "ExposedPorts": {"8080/tcp": {}}},
         "RootFS": {"Layers": ["sha256:" + str(i) * 64 for i in range(9)]},
@@ -241,7 +241,7 @@ def test_stale_registry_owner_fails(repo):
     for path in (RELEASE, PREFLIGHT):
         write(repo, path, read(repo, path).replace(
             'test "${image}" = "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kong-standby-auth"',
-            'test "${image}" = "ghcr.io/appolon1908-hue/kong-standby-auth"'))
+            'test "${image}" = "ghcr.io/appolon1908/kong-standby-auth"'))
     expect_failure(repo, "stale former owner literal")
     write(repo, PREFLIGHT, read(ROOT, PREFLIGHT))
     write(repo, RELEASE, read(ROOT, RELEASE).replace("${GITHUB_REPOSITORY_OWNER,,}", "some-other-org"))
@@ -249,12 +249,12 @@ def test_stale_registry_owner_fails(repo):
 
 
 def test_stale_owner_in_compose_or_tools_fails(repo):
-    write(repo, COMPOSE, read(repo, COMPOSE).replace("ghcr.io/ingtrader21-spec/", "ghcr.io/appolon1908-hue/"))
+    write(repo, COMPOSE, read(repo, COMPOSE).replace("ghcr.io/appolon1908/", "ghcr.io/appolon1908/"))
     expect_failure(repo, "compose.standby.yaml")
     write(repo, COMPOSE, read(ROOT, COMPOSE))
     tool = "tools/generate_release_manifest.py"
     write(repo, tool, read(repo, tool).replace('"standby_auth_image": STANDBY_IMAGE,',
-                                               '"standby_auth_image": "ghcr.io/appolon1908-hue/kong-standby-auth",'))
+                                               '"standby_auth_image": "ghcr.io/appolon1908/kong-standby-auth",'))
     expect_failure(repo, "image authority must come from tools/release_contract.py")
 
 
@@ -297,8 +297,8 @@ def test_contract_binding_must_precede_registry_login(repo):
 @pytest.mark.parametrize(("mutate", "match"), [
     (lambda c: c.update(runtimeApplyAuthorized=True), "registry_contract_authorizes_runtime_apply"),
     (lambda c: c.update(providerEffectsEnabled=True), "registry_contract_enables_provider_effects"),
-    (lambda c: c["registry"].update(namespace="appolon1908-hue", image="ghcr.io/appolon1908-hue/kong-standby-auth"), "registry_namespace_not_repository_owner"),
-    (lambda c: c["registry"].update(image="ghcr.io/ingtrader21-spec/other"), "registry_image_inconsistent"),
+    (lambda c: c["registry"].update(namespace="appolon1908", image="ghcr.io/appolon1908/kong-standby-auth"), "registry_namespace_not_repository_owner"),
+    (lambda c: c["registry"].update(image="ghcr.io/appolon1908/other"), "registry_image_inconsistent"),
     (lambda c: c["tagPolicy"].update(mutableTagsAllowed=True), "mutable_tags_allowed"),
     (lambda c: c["tagPolicy"].update(forbiddenTags=["stable"]), "forbidden_tags_incomplete"),
 ])
@@ -332,7 +332,7 @@ def test_dockerfile_and_requirements_downgrades_fail(repo):
     (lambda m: m.pop("standby_auth_image_digest"), "unbound:standby_auth_image_digest"),
     (lambda m: m.update(standby_auth_image_digest="sha256:abc"), "standby_image_digest_format"),
     (lambda m: m.update(standby_auth_image_digest="sha256:" + "e" * 64), "registry_digest_mismatch"),
-    (lambda m: m.update(standby_auth_image="ghcr.io/appolon1908-hue/kong-standby-auth"), "standby_image_authority"),
+    (lambda m: m.update(standby_auth_image="ghcr.io/appolon1908/kong-standby-auth"), "standby_image_authority"),
     (lambda m: m.update(standby_auth_image_tag="latest"), "tag_policy"),
     (lambda m: m.update(standby_auth_image_tag="preflight-sha-" + SHA), "tag_policy"),
     (lambda m: m.pop("standby_auth_sbom_sha256"), "unbound:standby_auth_sbom_sha256"),
@@ -341,8 +341,8 @@ def test_dockerfile_and_requirements_downgrades_fail(repo):
     (lambda m: m.update(release_registry_contract_sha256="9" * 64), "registry_contract_drift"),
     (lambda m: m.update(commit_verification_status="N"), "commit_not_verified"),
     (lambda m: m.update(commit_verification_status="UNVERIFIED_PREFLIGHT_HEAD"), "commit_not_verified"),
-    (lambda m: m.update(repository="appolon1908-hue/Kong"), "repository_mismatch"),
-    (lambda m: m.update(workflow_ref="appolon1908-hue/Kong/.github/workflows/release.yml@refs/heads/main"), "workflow_ref_foreign"),
+    (lambda m: m.update(repository="appolon1908/Kong"), "repository_mismatch"),
+    (lambda m: m.update(workflow_ref="appolon1908/Kong/.github/workflows/release.yml@refs/heads/main"), "workflow_ref_foreign"),
     (lambda m: m.update(workflow_run_id=None), "unbound:workflow_run_id"),
     (lambda m: m.update(runtime_apply_authorized=True), "runtime_apply_authorized_not_false"),
     (lambda m: m.update(provider_effects_enabled=True), "provider_effects_enabled_not_false"),
@@ -401,7 +401,7 @@ def test_preflight_evidence_is_never_promotable():
     raw, artifact = archive(broken)
     with pytest.raises(ValueError, match="not_source_candidate"):
         candidate.verified_manifest(raw, artifact, SHA)
-    broken = dict(manifest, standby_auth_image="ghcr.io/appolon1908-hue/kong-standby-auth")
+    broken = dict(manifest, standby_auth_image="ghcr.io/appolon1908/kong-standby-auth")
     raw, artifact = archive(broken)
     with pytest.raises(ValueError, match="wrong_image_authority"):
         candidate.verified_manifest(raw, artifact, SHA)

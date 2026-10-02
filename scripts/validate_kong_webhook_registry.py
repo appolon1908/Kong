@@ -124,7 +124,7 @@ def validate_against_caddy(registry: dict[str, Any], caddy_repo: Path) -> dict[s
             row = caddy_webhook_by_path.get(entry["path"])
             if not row or row.get("classification") != "CANONICAL":
                 raise WebhookError(f"Caddy canonical webhook missing: {entry['path']}")
-            if row.get("gateway") != "ingtrader21-spec/Kong":
+            if row.get("gateway") != "appolon1908/Kong":
                 raise WebhookError(f"Caddy webhook does not hand off to Kong: {entry['path']}")
         elif entry["id"] == "github-events":
             row = next(
@@ -133,7 +133,7 @@ def validate_against_caddy(registry: dict[str, Any], caddy_repo: Path) -> dict[s
                     for item in edge_entries
                     if item.get("path") == "/platform/v1/*"
                     and item.get("classification") == "CANONICAL"
-                    and item.get("gateway") == "ingtrader21-spec/Kong"
+                    and item.get("gateway") == "appolon1908/Kong"
                 ),
                 None,
             )

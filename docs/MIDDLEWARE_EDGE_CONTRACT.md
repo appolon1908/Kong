@@ -9,7 +9,7 @@ certification runner reads it. Nothing here authorizes a runtime apply.
 
 | Item | Value |
 | --- | --- |
-| Source of truth | `appolon1908-hue/Middleware-` `deploy/public-api-route-contract.json` |
+| Source of truth | `appolon1908/Middleware-` `deploy/public-api-route-contract.json` |
 | Vendored copy | `config/middleware-public-api-route-contract.v1.json` (byte-identical) |
 | Pin | `config/kong-canonical-middleware-routes.json` → `middlewareEdgeContract.sha256` |
 | Hash rule | `sha256(json.dumps(contract, sort_keys=True, separators=(",", ":")).encode())` |

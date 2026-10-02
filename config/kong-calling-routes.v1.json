@@ -1,6 +1,6 @@
 {
   "schema": "codestra.kong.calling-routes.v1",
-  "authority": "appolon1908-hue/codestra-production-platform#257",
+  "authority": "appolon1908/codestra-production-platform#257",
   "contractVersion": "1.0.0",
   "contractDigest": "b39cdffe56a8185c91174228f0423df68b1137f34875f6ee52f9914f904bf724",
   "status": "SOURCE_CANDIDATE_NO_RUNTIME_APPLY",
