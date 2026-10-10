@@ -5,11 +5,16 @@
   "runtimeApplyAuthorized": false,
   "providerEffectsEnabled": false,
   "repository": {
-    "fullName": "ingtrader21-spec/Kong",
+    "fullName": "appolon1908/Kong",
     "id": 1347790742,
-    "owner": "ingtrader21-spec",
+    "owner": "appolon1908",
     "ownerType": "User",
     "formerNames": [
+      {
+        "fullName": "ingtrader21-spec/Kong",
+        "status": "historical owner; transferred to appolon1908",
+        "effect": "not authorized for the current repository or GHCR writer"
+      },
       {
         "fullName": "appolon1908-hue/Kong",
         "status": "transferred; the GitHub API answers HTTP 301 to repository id 1347790742",
@@ -20,12 +25,12 @@
   },
   "registry": {
     "host": "ghcr.io",
-    "namespace": "ingtrader21-spec",
+    "namespace": "appolon1908",
     "namespaceDerivedFrom": "lower-cased repository owner (GITHUB_REPOSITORY_OWNER); never a historical literal",
     "package": "kong-standby-auth",
-    "image": "ghcr.io/ingtrader21-spec/kong-standby-auth",
+    "image": "ghcr.io/appolon1908/kong-standby-auth",
     "packageVisibility": "private (inherits the repository visibility on first publication by the repository workflow; the package is linked to the repository by that publication)",
-    "packageLinkedTo": "ingtrader21-spec/Kong"
+    "packageLinkedTo": "appolon1908/Kong"
   },
   "identities": {
     "writer": "GITHUB_TOKEN of the repository's own workflow runs: .github/workflows/release.yml on push to main (authoritative candidate) and .github/workflows/release-preflight.yml on same-repository pull requests (preflight only); permissions contents: read, packages: write",

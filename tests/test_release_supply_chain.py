@@ -89,15 +89,15 @@ def good_manifest(stage: str = "protected-main-source-candidate", source: str = 
 
 def test_registry_contract_is_derived_from_the_current_repository_owner():
     document = json.loads(read(ROOT, REGISTRY_CONTRACT))
-    assert document["repository"]["fullName"] == "ingtrader21-spec/Kong"
+    assert document["repository"]["fullName"] == "appolon1908/Kong"
     assert document["registry"]["namespace"] == document["repository"]["owner"].lower()
-    assert document["registry"]["image"] == "ghcr.io/ingtrader21-spec/kong-standby-auth"
+    assert document["registry"]["image"] == "ghcr.io/appolon1908/kong-standby-auth"
     assert document["tagPolicy"]["mutableTagsAllowed"] is False
     assert "latest" in document["tagPolicy"]["forbiddenTags"]
     assert document["runtimeApplyAuthorized"] is False and document["providerEffectsEnabled"] is False
     former = {item["fullName"] for item in document["repository"]["formerNames"]}
-    assert former == {"appolon1908-hue/Kong"}
-    contract.assert_repository(document, "ingtrader21-spec/Kong", "ingtrader21-spec")
+    assert former == {"appolon1908-hue/Kong", "ingtrader21-spec/Kong"}
+    contract.assert_repository(document, "appolon1908/Kong", "appolon1908")
     with pytest.raises(contract.ContractError):
         contract.assert_repository(document, "appolon1908-hue/Kong", "appolon1908-hue")
 
@@ -185,7 +185,7 @@ def test_built_image_config_checks_accept_the_expected_shape_only():
         "Architecture": "amd64", "Os": "linux",
         "Config": {"User": "65532:65532", "Cmd": ["uvicorn", "standby_auth:app", "--app-dir", "/app"], "Entrypoint": None,
                    "Labels": {"org.opencontainers.image.revision": SHA, "org.opencontainers.image.version": SHA,
-                              "org.opencontainers.image.source": "https://github.com/ingtrader21-spec/Kong"},
+                              "org.opencontainers.image.source": "https://github.com/appolon1908/Kong"},
                    "Env": ["PATH=/usr/local/bin", "LANG=C.UTF-8", "GPG_KEY=x", "PYTHON_VERSION=3.12.14", "PYTHON_SHA256=y"],
                    "ExposedPorts": {"8080/tcp": {}}},
         "RootFS": {"Layers": ["sha256:" + str(i) * 64 for i in range(9)]},
@@ -249,7 +249,7 @@ def test_stale_registry_owner_fails(repo):
 
 
 def test_stale_owner_in_compose_or_tools_fails(repo):
-    write(repo, COMPOSE, read(repo, COMPOSE).replace("ghcr.io/ingtrader21-spec/", "ghcr.io/appolon1908-hue/"))
+    write(repo, COMPOSE, read(repo, COMPOSE).replace("ghcr.io/appolon1908/", "ghcr.io/appolon1908-hue/"))
     expect_failure(repo, "compose.standby.yaml")
     write(repo, COMPOSE, read(ROOT, COMPOSE))
     tool = "tools/generate_release_manifest.py"
