@@ -1,0 +1,6 @@
+{
+  "prefix": "kg",
+  "testing": "testing",
+  "staging": "staging",
+  "production": "production"
+}

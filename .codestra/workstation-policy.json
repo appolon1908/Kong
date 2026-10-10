@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "promotion": ["subsection", "section", "development", "testing", "staging", "production"],
+  "statuses": ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "COMPLETE", "CERTIFIED"]
+}

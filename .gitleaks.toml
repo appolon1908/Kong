@@ -20,3 +20,8 @@ useDefault = true
 description = "authenticationProfile values are validator-enforced catalogue identifiers, never credentials"
 regexTarget = "line"
 regexes = ['''^\s*"authenticationProfile":\s*"[A-Z][A-Z0-9_]*"\s*,?\s*$''']
+
+[[allowlists]]
+description = "Exact canonical Keycloak repository metadata, not a credential"
+regexTarget = "line"
+regexes = ['''^\s*"keycloakRepository":\s*"appolon1908/Keycloak"\s*,?\s*$''']

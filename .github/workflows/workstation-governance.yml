@@ -1,0 +1,24 @@
+name: Workstation governance
+on:
+  pull_request:
+    branches:
+      - development
+      - testing
+      - staging
+      - production
+      - testing/environment
+      - production/environment
+      - main
+permissions:
+  contents: read
+jobs:
+  promotion-gate:
+    name: promotion-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate promotion hierarchy
+        run: python3 .codestra/validate-promotion.py "$HEAD_REF" "$BASE_REF"
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}

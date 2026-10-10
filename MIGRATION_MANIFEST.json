@@ -6,6 +6,21 @@
       "size": 233
     },
     {
+      "path": ".codestra/promotion-map.json",
+      "sha256": "6be8b651823c53eb214058a4566670d46d28be0b629d06a46ad916f26e0f9121",
+      "size": 99
+    },
+    {
+      "path": ".codestra/validate-promotion.py",
+      "sha256": "782de7313088701ec8c6ee46fe870f1e91a9328463da5034a7035a533a2b737c",
+      "size": 1904
+    },
+    {
+      "path": ".codestra/workstation-policy.json",
+      "sha256": "23cf2facfc8843b30685033bca2de59ff2e81efe75cc4d5b66c98a53c417d6e5",
+      "size": 201
+    },
+    {
       "path": ".github/workflows/calling-contract-pin.yml",
       "sha256": "eb004bbc12919944c1a8312275a99475dfa4d2abefab2f309181173d16492ff0",
       "size": 3263
@@ -64,6 +79,11 @@
       "path": ".github/workflows/validate.yml",
       "sha256": "9a76a18a26b01be0a974ce5dec71036e3411b28ef49dc58d25215a37a15aa5e8",
       "size": 8982
+    },
+    {
+      "path": ".github/workflows/workstation-governance.yml",
+      "sha256": "8e08a1e613c845e37ad1216ce6e84b63681abe2ae2f4bda80b007bd55d227950",
+      "size": 576
     },
     {
       "path": ".gitignore",
@@ -1362,7 +1382,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "6228476cd83c75356c4ce5f2b0a928dda1df24806201c1a8f97dabbfd26b8043",
+  "manifest_generation_id": "849a26d279556159b3a0debedbe195c29680ed2999970c4703c25d3448d6b3dd",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
