@@ -36,10 +36,12 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
-      - name: Install validation dependencies
+      - name: Verify workstation validation toolchain
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends shellcheck lua5.4
+          set -Eeuo pipefail
+          command -v shellcheck
+          command -v lua
+          command -v luac
           python3 -m pip install --disable-pip-version-check pytest PyYAML -r tools/gateway-test-requirements.txt
       - name: Validate structured source and calling policy
         run: |
@@ -132,10 +134,15 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
-      - name: Install merge-result validation dependencies
+      - name: Verify merge-result validation toolchain
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends lua5.4
+          set -Eeuo pipefail
+          # The self-hosted Kong runner has Lua installed; CI must not require sudo.
+          command -v lua5.4
+          command -v lua
+          command -v luac
+          lua5.4 -v
+          luac -v
           python3 -m pip install --disable-pip-version-check pytest PyYAML -r tools/gateway-test-requirements.txt
       - name: Validate merge-result calling policy and manifests
         run: |

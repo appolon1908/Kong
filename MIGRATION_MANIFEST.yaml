@@ -5,6 +5,9 @@ files:
 - path: .github/workflows/calling-contract-pin.yml
   sha256: eb004bbc12919944c1a8312275a99475dfa4d2abefab2f309181173d16492ff0
   size: 3263
+- path: .github/workflows/codestra-hierarchy-governance.yml
+  sha256: 66a1c267bf45950af67b8455b335989b57dc1fa45cadf3c5203a233df3300876
+  size: 2129
 - path: .github/workflows/kong-config.yml
   sha256: e351a750364dd0a8d0875f628e1f46bb13aac0580291c32630379dee96f44bd4
   size: 2428
@@ -36,8 +39,8 @@ files:
   sha256: 9bb366d5b10186ab749adc24a5d868867467a6099b18485ebcc9a302dc6b2543
   size: 3248
 - path: .github/workflows/validate.yml
-  sha256: 9a76a18a26b01be0a974ce5dec71036e3411b28ef49dc58d25215a37a15aa5e8
-  size: 8982
+  sha256: afaaa2470a54ddc185db5076a8883571a97e02c67f3aa1677c30444015ed05ec
+  size: 9128
 - path: .gitignore
   sha256: 8c06027889bb245680b8a248468504a51ff8654fc6c800ea9ebd9f54213ddf9d
   size: 214
@@ -159,8 +162,8 @@ files:
   sha256: b3fa87955bd7d9ed4f30ac7bdd78da94393b1ea5eb1a2768700682f9dffd068b
   size: 5282
 - path: config/kong-release-registry-contract.v1.json
-  sha256: a60078b3545865bf18449060376aeca4aca9051f90257968c1a2640fc1fc4b20
-  size: 4380
+  sha256: 67520760ce1271d463ecee462228e7c34045871e3e390300d4cdd49a6418ee92
+  size: 4563
 - path: config/kong-webhook-registry.v1.json
   sha256: 4f70c7fd835609c66b41d4af49d8cafd882cf769ceca0e4c9bfebf8c48609da2
   size: 4796
@@ -225,8 +228,8 @@ files:
   sha256: 9a7989794835df300305668cc65a0874a4c9770fc52346330c4a9d86fa8fa4a4
   size: 4354
 - path: deploy/kong-production-standby/compose.standby.yaml
-  sha256: 5d173703d302c430bd5715027fbeffd677b100b05fbc9684e597c157b74fdca0
-  size: 1703
+  sha256: bec3ca6c85dab1e659f35b3f1abdf341b62412ed79ee5eeff07912aa90dbc6ca
+  size: 1698
 - path: deploy/kong-production-standby/identity-registry/001_certifier_scopes.sql
   sha256: 018ce9854338bad3a883e0a82c5a2adb4632668b89daf3e1b5965b2053ad9fe0
   size: 361
@@ -759,8 +762,8 @@ files:
   sha256: 5c6fdbd62babd5d9039adee13924c7b99c3cd1eb18d527fafb148f85cfad62ff
   size: 3516
 - path: tests/test_release_supply_chain.py
-  sha256: 308a009c242e2702fc77f919c4af8d3094f17fb39eca059cd9c50cf730bf4f30
-  size: 24803
+  sha256: cbc1dc106cf0b6808ef1f1a09b188fcf25e52964f0533b875055a7ba534fb836
+  size: 24806
 - path: tests/test_runner_hardening.py
   sha256: 0d51030f74e337116285ea072a45562dc0220776e94c7f1484a1c526116e6774
   size: 1409
@@ -816,7 +819,7 @@ files:
   sha256: 9346d7586c76f1386231236259325f17d7f36a1a1486a7ada454314a11d380f7
   size: 6249
 generated_at: '2026-08-26T21:10:25.642865+00:00'
-manifest_generation_id: 6228476cd83c75356c4ce5f2b0a928dda1df24806201c1a8f97dabbfd26b8043
+manifest_generation_id: 62b42d6f82d36e0d4f7321f8fd97161dfef7cda91a7d8905985dc857624a1cde
 production_state_changed: false
 schema: codestra.kong.repository-migration.v1
 source_files:

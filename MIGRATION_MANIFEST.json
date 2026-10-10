@@ -11,6 +11,11 @@
       "size": 3263
     },
     {
+      "path": ".github/workflows/codestra-hierarchy-governance.yml",
+      "sha256": "66a1c267bf45950af67b8455b335989b57dc1fa45cadf3c5203a233df3300876",
+      "size": 2129
+    },
+    {
       "path": ".github/workflows/kong-config.yml",
       "sha256": "e351a750364dd0a8d0875f628e1f46bb13aac0580291c32630379dee96f44bd4",
       "size": 2428
@@ -62,8 +67,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "9a76a18a26b01be0a974ce5dec71036e3411b28ef49dc58d25215a37a15aa5e8",
-      "size": 8982
+      "sha256": "afaaa2470a54ddc185db5076a8883571a97e02c67f3aa1677c30444015ed05ec",
+      "size": 9128
     },
     {
       "path": ".gitignore",
@@ -267,8 +272,8 @@
     },
     {
       "path": "config/kong-release-registry-contract.v1.json",
-      "sha256": "a60078b3545865bf18449060376aeca4aca9051f90257968c1a2640fc1fc4b20",
-      "size": 4380
+      "sha256": "67520760ce1271d463ecee462228e7c34045871e3e390300d4cdd49a6418ee92",
+      "size": 4563
     },
     {
       "path": "config/kong-webhook-registry.v1.json",
@@ -377,8 +382,8 @@
     },
     {
       "path": "deploy/kong-production-standby/compose.standby.yaml",
-      "sha256": "5d173703d302c430bd5715027fbeffd677b100b05fbc9684e597c157b74fdca0",
-      "size": 1703
+      "sha256": "bec3ca6c85dab1e659f35b3f1abdf341b62412ed79ee5eeff07912aa90dbc6ca",
+      "size": 1698
     },
     {
       "path": "deploy/kong-production-standby/identity-registry/001_certifier_scopes.sql",
@@ -1267,8 +1272,8 @@
     },
     {
       "path": "tests/test_release_supply_chain.py",
-      "sha256": "308a009c242e2702fc77f919c4af8d3094f17fb39eca059cd9c50cf730bf4f30",
-      "size": 24803
+      "sha256": "cbc1dc106cf0b6808ef1f1a09b188fcf25e52964f0533b875055a7ba534fb836",
+      "size": 24806
     },
     {
       "path": "tests/test_runner_hardening.py",
@@ -1362,7 +1367,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "6228476cd83c75356c4ce5f2b0a928dda1df24806201c1a8f97dabbfd26b8043",
+  "manifest_generation_id": "62b42d6f82d36e0d4f7321f8fd97161dfef7cda91a7d8905985dc857624a1cde",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-05-traffic-security::02-tls-mtls",
+  "product": "kong",
+  "section": "kg-05-traffic-security",
+  "subsection": "02-tls-mtls",
+  "branch": "subsection/kg-05-traffic-security--02-tls-mtls",
+  "parent_branch": "section/kg-05-traffic-security",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-05-traffic-security/subsections/02-tls-mtls/repo",
+  "depends_on": [
+    "kong::kg-04-authorization::03-service-profiles",
+    "kong::kg-05-traffic-security::01-rate-limits"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

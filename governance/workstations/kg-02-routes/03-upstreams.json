@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-02-routes::03-upstreams",
+  "product": "kong",
+  "section": "kg-02-routes",
+  "subsection": "03-upstreams",
+  "branch": "subsection/kg-02-routes--03-upstreams",
+  "parent_branch": "section/kg-02-routes",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-02-routes/subsections/03-upstreams/repo",
+  "depends_on": [
+    "kong::kg-01-runtime::03-admin-surface",
+    "kong::kg-02-routes::02-private-boundaries"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

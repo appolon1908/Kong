@@ -1,0 +1,25 @@
+{
+  "workstation": "kong::kg-03-identity::03-service-identity",
+  "product": "kong",
+  "section": "kg-03-identity",
+  "subsection": "03-service-identity",
+  "branch": "subsection/kg-03-identity--03-service-identity",
+  "parent_branch": "section/kg-03-identity",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-03-identity/subsections/03-service-identity/repo",
+  "depends_on": [
+    "kong::kg-01-runtime::03-admin-surface",
+    "kong::kg-02-routes::03-upstreams",
+    "kong::kg-03-identity::02-issuer-audience"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

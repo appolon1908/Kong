@@ -1,0 +1,55 @@
+name: Codestra Hierarchy Governance
+on:
+  pull_request:
+    branches:
+      - main
+      - development
+      - testing
+      - staging
+      - production
+      - 'section/**'
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  promotion-guard:
+    name: promotion-guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Allow the one-time governance bootstrap PR
+        if: ${{ github.event.pull_request.number == 133 && github.head_ref == 'governance/development-control-plane-v1' && github.base_ref == 'main' }}
+        run: echo 'PROMOTION_GUARD=PASS bootstrap-pr-133'
+      - name: Check out trusted main governance authority
+        if: ${{ !(github.event.pull_request.number == 133 && github.head_ref == 'governance/development-control-plane-v1' && github.base_ref == 'main') }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: main
+          persist-credentials: false
+          path: trusted-governance
+      - name: Enforce promotion path from trusted main
+        if: ${{ !(github.event.pull_request.number == 133 && github.head_ref == 'governance/development-control-plane-v1' && github.base_ref == 'main') }}
+        working-directory: trusted-governance
+        env:
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: python3 governance/promotion_guard.py
+
+  control-plane-certification:
+    name: control-plane-certification
+    runs-on: [self-hosted, linux, x64, codestra-control-plane]
+    timeout-minutes: 5
+    steps:
+      - name: Verify exact SHA in Codestra development control plane
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -Eeuo pipefail
+          /srv/codestra/dev-platform/control-plane/bin/codestra-github-check \
+            --product 'Kong' \
+            --repo-path '/srv/codestra/apps/Kong' \
+            --head-ref "$HEAD_REF" \
+            --base-ref "$BASE_REF" \
+            --head-sha "$HEAD_SHA"

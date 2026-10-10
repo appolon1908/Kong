@@ -1,0 +1,111 @@
+{
+  "product": "kong",
+  "repository": "appolon1908/Kong",
+  "promotion_chain": [
+    "subsection/*",
+    "section/*",
+    "development",
+    "testing",
+    "staging",
+    "production"
+  ],
+  "sections": [
+    {
+      "section": "kg-01-runtime",
+      "branch": "section/kg-01-runtime",
+      "depends_on": [],
+      "subsections": [
+        "01-runtime-config",
+        "02-plugin-baseline",
+        "03-admin-surface"
+      ]
+    },
+    {
+      "section": "kg-02-routes",
+      "branch": "section/kg-02-routes",
+      "depends_on": [
+        "kg-01-runtime"
+      ],
+      "subsections": [
+        "01-route-catalog",
+        "02-private-boundaries",
+        "03-upstreams"
+      ]
+    },
+    {
+      "section": "kg-03-identity",
+      "branch": "section/kg-03-identity",
+      "depends_on": [
+        "kg-01-runtime",
+        "kg-02-routes"
+      ],
+      "subsections": [
+        "01-jwt-jwks",
+        "02-issuer-audience",
+        "03-service-identity"
+      ]
+    },
+    {
+      "section": "kg-04-authorization",
+      "branch": "section/kg-04-authorization",
+      "depends_on": [
+        "kg-03-identity"
+      ],
+      "subsections": [
+        "01-scopes",
+        "02-tenant-binding",
+        "03-service-profiles"
+      ]
+    },
+    {
+      "section": "kg-05-traffic-security",
+      "branch": "section/kg-05-traffic-security",
+      "depends_on": [
+        "kg-04-authorization"
+      ],
+      "subsections": [
+        "01-rate-limits",
+        "02-tls-mtls",
+        "03-webhook-signing"
+      ]
+    },
+    {
+      "section": "kg-06-tenancy",
+      "branch": "section/kg-06-tenancy",
+      "depends_on": [
+        "kg-04-authorization",
+        "kg-05-traffic-security"
+      ],
+      "subsections": [
+        "01-tenant-routing",
+        "02-quotas",
+        "03-audit"
+      ]
+    },
+    {
+      "section": "kg-07-observability",
+      "branch": "section/kg-07-observability",
+      "depends_on": [
+        "kg-05-traffic-security",
+        "kg-06-tenancy"
+      ],
+      "subsections": [
+        "01-metrics",
+        "02-logs-traces",
+        "03-slo-alerts"
+      ]
+    },
+    {
+      "section": "kg-08-release",
+      "branch": "section/kg-08-release",
+      "depends_on": [
+        "kg-07-observability"
+      ],
+      "subsections": [
+        "01-integration",
+        "02-performance",
+        "03-certification"
+      ]
+    }
+  ]
+}

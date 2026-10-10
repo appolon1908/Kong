@@ -1,0 +1,23 @@
+{
+  "workstation": "kong::kg-08-release::01-integration",
+  "product": "kong",
+  "section": "kg-08-release",
+  "subsection": "01-integration",
+  "branch": "subsection/kg-08-release--01-integration",
+  "parent_branch": "section/kg-08-release",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-08-release/subsections/01-integration/repo",
+  "depends_on": [
+    "kong::kg-07-observability::03-slo-alerts"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

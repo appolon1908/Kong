@@ -1,0 +1,23 @@
+{
+  "workstation": "kong::kg-01-runtime::02-plugin-baseline",
+  "product": "kong",
+  "section": "kg-01-runtime",
+  "subsection": "02-plugin-baseline",
+  "branch": "subsection/kg-01-runtime--02-plugin-baseline",
+  "parent_branch": "section/kg-01-runtime",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-01-runtime/subsections/02-plugin-baseline/repo",
+  "depends_on": [
+    "kong::kg-01-runtime::01-runtime-config"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

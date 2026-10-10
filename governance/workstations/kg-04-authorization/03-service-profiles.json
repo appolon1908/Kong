@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-04-authorization::03-service-profiles",
+  "product": "kong",
+  "section": "kg-04-authorization",
+  "subsection": "03-service-profiles",
+  "branch": "subsection/kg-04-authorization--03-service-profiles",
+  "parent_branch": "section/kg-04-authorization",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-04-authorization/subsections/03-service-profiles/repo",
+  "depends_on": [
+    "kong::kg-03-identity::03-service-identity",
+    "kong::kg-04-authorization::02-tenant-binding"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

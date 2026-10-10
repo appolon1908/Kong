@@ -1,0 +1,23 @@
+{
+  "workstation": "kong::kg-05-traffic-security::01-rate-limits",
+  "product": "kong",
+  "section": "kg-05-traffic-security",
+  "subsection": "01-rate-limits",
+  "branch": "subsection/kg-05-traffic-security--01-rate-limits",
+  "parent_branch": "section/kg-05-traffic-security",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-05-traffic-security/subsections/01-rate-limits/repo",
+  "depends_on": [
+    "kong::kg-04-authorization::03-service-profiles"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

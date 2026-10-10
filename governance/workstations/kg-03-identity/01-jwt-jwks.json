@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-03-identity::01-jwt-jwks",
+  "product": "kong",
+  "section": "kg-03-identity",
+  "subsection": "01-jwt-jwks",
+  "branch": "subsection/kg-03-identity--01-jwt-jwks",
+  "parent_branch": "section/kg-03-identity",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-03-identity/subsections/01-jwt-jwks/repo",
+  "depends_on": [
+    "kong::kg-01-runtime::03-admin-surface",
+    "kong::kg-02-routes::03-upstreams"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

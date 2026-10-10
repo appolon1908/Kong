@@ -6,3 +6,6 @@ aa4e996e79ad0f4f3ba33edac86ed93bfcec3c72:docs/KONG_V3_INTEGRATION_PARITY.md:gene
 aa4e996e79ad0f4f3ba33edac86ed93bfcec3c72:scripts/generate_kong_postman.py:generic-api-key:294
 83cdbe5cc10edbb15ca79264ba1fb5fbd49af4d0:scripts/validate_kong_v3_identity_security.py:generic-api-key:22
 83cdbe5cc10edbb15ca79264ba1fb5fbd49af4d0:config/kong-access-policy.v1.json:generic-api-key:8378
+
+# Historical comment naming the Keycloak repository, not a credential.
+44f88129bb0a04bd13dd8b5b70930be703a758f2:.gitleaksignore:generic-api-key:10

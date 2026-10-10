@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-05-traffic-security::03-webhook-signing",
+  "product": "kong",
+  "section": "kg-05-traffic-security",
+  "subsection": "03-webhook-signing",
+  "branch": "subsection/kg-05-traffic-security--03-webhook-signing",
+  "parent_branch": "section/kg-05-traffic-security",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-05-traffic-security/subsections/03-webhook-signing/repo",
+  "depends_on": [
+    "kong::kg-04-authorization::03-service-profiles",
+    "kong::kg-05-traffic-security::02-tls-mtls"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

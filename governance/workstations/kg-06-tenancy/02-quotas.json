@@ -1,0 +1,25 @@
+{
+  "workstation": "kong::kg-06-tenancy::02-quotas",
+  "product": "kong",
+  "section": "kg-06-tenancy",
+  "subsection": "02-quotas",
+  "branch": "subsection/kg-06-tenancy--02-quotas",
+  "parent_branch": "section/kg-06-tenancy",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-06-tenancy/subsections/02-quotas/repo",
+  "depends_on": [
+    "kong::kg-04-authorization::03-service-profiles",
+    "kong::kg-05-traffic-security::03-webhook-signing",
+    "kong::kg-06-tenancy::01-tenant-routing"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

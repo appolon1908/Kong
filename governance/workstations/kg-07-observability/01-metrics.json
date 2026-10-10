@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-07-observability::01-metrics",
+  "product": "kong",
+  "section": "kg-07-observability",
+  "subsection": "01-metrics",
+  "branch": "subsection/kg-07-observability--01-metrics",
+  "parent_branch": "section/kg-07-observability",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-07-observability/subsections/01-metrics/repo",
+  "depends_on": [
+    "kong::kg-05-traffic-security::03-webhook-signing",
+    "kong::kg-06-tenancy::03-audit"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

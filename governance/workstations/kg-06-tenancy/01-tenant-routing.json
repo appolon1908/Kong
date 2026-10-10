@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-06-tenancy::01-tenant-routing",
+  "product": "kong",
+  "section": "kg-06-tenancy",
+  "subsection": "01-tenant-routing",
+  "branch": "subsection/kg-06-tenancy--01-tenant-routing",
+  "parent_branch": "section/kg-06-tenancy",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-06-tenancy/subsections/01-tenant-routing/repo",
+  "depends_on": [
+    "kong::kg-04-authorization::03-service-profiles",
+    "kong::kg-05-traffic-security::03-webhook-signing"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

@@ -5,27 +5,32 @@
   "runtimeApplyAuthorized": false,
   "providerEffectsEnabled": false,
   "repository": {
-    "fullName": "ingtrader21-spec/Kong",
+    "fullName": "appolon1908/Kong",
     "id": 1347790742,
-    "owner": "ingtrader21-spec",
+    "owner": "appolon1908",
     "ownerType": "User",
     "formerNames": [
       {
         "fullName": "appolon1908-hue/Kong",
         "status": "transferred; the GitHub API answers HTTP 301 to repository id 1347790742",
         "effect": "a repository-scoped GITHUB_TOKEN can only write packages in the current owner namespace; the former namespace answers permission_denied: The requested installation does not exist"
+      },
+      {
+        "fullName": "ingtrader21-spec/Kong",
+        "status": "transferred; repository id 1347790742 is now owned by appolon1908",
+        "effect": "historical registry namespace; current repository-scoped GITHUB_TOKEN must use appolon1908"
       }
     ],
     "bindingRule": "every release workflow proves GITHUB_REPOSITORY == repository.fullName and lower(GITHUB_REPOSITORY_OWNER) == registry.namespace before it authenticates to the registry; a further transfer fails closed instead of publishing to a stale namespace"
   },
   "registry": {
     "host": "ghcr.io",
-    "namespace": "ingtrader21-spec",
+    "namespace": "appolon1908",
     "namespaceDerivedFrom": "lower-cased repository owner (GITHUB_REPOSITORY_OWNER); never a historical literal",
     "package": "kong-standby-auth",
-    "image": "ghcr.io/ingtrader21-spec/kong-standby-auth",
-    "packageVisibility": "private (inherits the repository visibility on first publication by the repository workflow; the package is linked to the repository by that publication)",
-    "packageLinkedTo": "ingtrader21-spec/Kong"
+    "image": "ghcr.io/appolon1908/kong-standby-auth",
+    "packageVisibility": "public repository-linked package; immutable digest promotion only",
+    "packageLinkedTo": "appolon1908/Kong"
   },
   "identities": {
     "writer": "GITHUB_TOKEN of the repository's own workflow runs: .github/workflows/release.yml on push to main (authoritative candidate) and .github/workflows/release-preflight.yml on same-repository pull requests (preflight only); permissions contents: read, packages: write",
@@ -37,7 +42,13 @@
     "authoritative": "sha-<40 lowercase hex git sha of the protected main commit>",
     "preflight": "preflight-sha-<40 lowercase hex git sha of the pull-request head>; proves build, publish, digest and attestation capability; never promotable and never a release authority",
     "mutableTagsAllowed": false,
-    "forbiddenTags": ["latest", "main", "staging", "production", "stable"],
+    "forbiddenTags": [
+      "latest",
+      "main",
+      "staging",
+      "production",
+      "stable"
+    ],
     "digestAuthority": "the OCI image index digest reported by buildx (containerimage.digest) and re-read from the registry with imagetools inspect; every consumer (release manifest, compose, promotion) references <image>@sha256:<digest>, never a tag"
   },
   "attestations": {

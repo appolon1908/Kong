@@ -1,0 +1,24 @@
+{
+  "workstation": "kong::kg-02-routes::02-private-boundaries",
+  "product": "kong",
+  "section": "kg-02-routes",
+  "subsection": "02-private-boundaries",
+  "branch": "subsection/kg-02-routes--02-private-boundaries",
+  "parent_branch": "section/kg-02-routes",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Kong/sections/kg-02-routes/subsections/02-private-boundaries/repo",
+  "depends_on": [
+    "kong::kg-01-runtime::03-admin-surface",
+    "kong::kg-02-routes::01-route-catalog"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}
