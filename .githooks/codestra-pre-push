@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=$(git rev-parse --show-toplevel)
+if [[ -z "${CODESTRA_WORKSTATION_ID:-}" ]]; then
+  echo 'CODESTRA_PUSH_BLOCKED: export CODESTRA_WORKSTATION_ID with your assigned workstation ID before pushing.' >&2
+  exit 64
+fi
+if [[ -z "${CODESTRA_AGENT_ID:-}" ]]; then
+  echo 'CODESTRA_PUSH_BLOCKED: export CODESTRA_AGENT_ID with the agent ID that owns the workstation lease before pushing.' >&2
+  exit 64
+fi
+if [[ "$#" -ne 2 ]]; then
+  echo 'CODESTRA_PUSH_BLOCKED: Git must supply the remote name and remote URL to pre-push.' >&2
+  exit 64
+fi
+
+exec python3 "$root/.githooks/codestra-push-check.py" \
+  --workstation "$CODESTRA_WORKSTATION_ID" \
+  --agent "$CODESTRA_AGENT_ID" \
+  --repo-path "$root" \
+  --remote-name "$1" \
+  --remote-url "$2"
