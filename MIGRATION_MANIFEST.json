@@ -7,8 +7,8 @@
     },
     {
       "path": ".github/workflows/calling-contract-pin.yml",
-      "sha256": "eb004bbc12919944c1a8312275a99475dfa4d2abefab2f309181173d16492ff0",
-      "size": 3263
+      "sha256": "733af6a750bdf14447afcc7797d070e88c63a43c4c9d5e21c7874fee0750ab74",
+      "size": 2924
     },
     {
       "path": ".github/workflows/kong-config.yml",
@@ -267,8 +267,8 @@
     },
     {
       "path": "config/kong-release-registry-contract.v1.json",
-      "sha256": "a60078b3545865bf18449060376aeca4aca9051f90257968c1a2640fc1fc4b20",
-      "size": 4380
+      "sha256": "4354dc5dc1aa615e2d70584b5ca3d59defdc44e7529e3405b69a81036549face",
+      "size": 4676
     },
     {
       "path": "config/kong-webhook-registry.v1.json",
@@ -377,8 +377,8 @@
     },
     {
       "path": "deploy/kong-production-standby/compose.standby.yaml",
-      "sha256": "5d173703d302c430bd5715027fbeffd677b100b05fbc9684e597c157b74fdca0",
-      "size": 1703
+      "sha256": "bec3ca6c85dab1e659f35b3f1abdf341b62412ed79ee5eeff07912aa90dbc6ca",
+      "size": 1698
     },
     {
       "path": "deploy/kong-production-standby/identity-registry/001_certifier_scopes.sql",
@@ -1267,8 +1267,8 @@
     },
     {
       "path": "tests/test_release_supply_chain.py",
-      "sha256": "308a009c242e2702fc77f919c4af8d3094f17fb39eca059cd9c50cf730bf4f30",
-      "size": 24803
+      "sha256": "650a7b6d55d2ab6445b888a0a24d0f8300729b305dfe97baa4604bd69efecab6",
+      "size": 24990
     },
     {
       "path": "tests/test_runner_hardening.py",
@@ -1362,7 +1362,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "6228476cd83c75356c4ce5f2b0a928dda1df24806201c1a8f97dabbfd26b8043",
+  "manifest_generation_id": "7de9ed569d6b6c4e9e1a0b086c59029fdb6aa990b890734cb3a2db7ae4af9d66",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [
