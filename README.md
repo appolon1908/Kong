@@ -62,3 +62,7 @@ Reconciliation is dry-run by default. Live Admin API mutation, database cutover,
 DNS promotion, fencing, deployment, or traffic activation requires a separate
 reviewed change, exact-head approval, recovery evidence, and an active maintenance
 window.
+
+## Governance Git hooks
+
+Enable the shared pre-push checks from your approved workstation using the [hook setup and lease instructions](docs/governance-git-hooks.md). Activation is explicit for each clone; existing CI and publication requirements still apply.
