@@ -7,33 +7,33 @@
     },
     {
       "path": ".github/workflows/calling-contract-pin.yml",
-      "sha256": "eb004bbc12919944c1a8312275a99475dfa4d2abefab2f309181173d16492ff0",
-      "size": 3263
+      "sha256": "733af6a750bdf14447afcc7797d070e88c63a43c4c9d5e21c7874fee0750ab74",
+      "size": 2924
     },
     {
       "path": ".github/workflows/kong-config.yml",
-      "sha256": "e351a750364dd0a8d0875f628e1f46bb13aac0580291c32630379dee96f44bd4",
-      "size": 2428
+      "sha256": "c33fbede31cad67618dc697ab802801f35e3402304a7e22a137520c363c12a0f",
+      "size": 2402
     },
     {
       "path": ".github/workflows/kong-v3-certification.yml",
-      "sha256": "add2897645e2007a7a4dee5a5cb1fc017ac1ed7d7f895f5e0a087bffd5cc1b14",
-      "size": 6304
+      "sha256": "24452e471a858a2146e845c4cd6b69f03e4dbddd4bf7b0966350ba62c142ed1a",
+      "size": 6278
     },
     {
       "path": ".github/workflows/manifest-sync.yml",
-      "sha256": "4522efca82cc4e44555d060a1840439db5f91cefcc049a1c7641635a23f836bb",
-      "size": 3011
+      "sha256": "a5356d6b3c02b7c96736dd7e95044a1c30d702d96f652e252c2a72c1d71bc5af",
+      "size": 2985
     },
     {
       "path": ".github/workflows/marketing-stage5-certification.yml",
-      "sha256": "62cc6befb9f2560b2d03844776f4fd16f4a9b10371390f84641aefc5f4325194",
-      "size": 1877
+      "sha256": "08ca3a2735fac8af0818bd66778aabceae5d5abcc85bb02c856fc5a41ac0f017",
+      "size": 1851
     },
     {
       "path": ".github/workflows/release-preflight.yml",
-      "sha256": "04a7317c11b71a6d42fe7e6bd44b3befe05fc1439206c1bc69378fabe27a9c82",
-      "size": 10433
+      "sha256": "5e7bb437a056960080d3ba20211b3d12e2db68e49b25e8e3b1f146703d46e44b",
+      "size": 10407
     },
     {
       "path": ".github/workflows/release.yml",
@@ -47,8 +47,8 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "fe08edbb12edc650b0740ecad2cb2c81880e0621b4f5ee14856bc4eb87b95e4b",
-      "size": 5937
+      "sha256": "6bcaed2de40fb70820e19783ccea8e308fbb33cbe070e04ef81c7c1e046f70f5",
+      "size": 7148
     },
     {
       "path": ".github/workflows/server-drift.yml",
@@ -62,8 +62,8 @@
     },
     {
       "path": ".github/workflows/validate.yml",
-      "sha256": "9a76a18a26b01be0a974ce5dec71036e3411b28ef49dc58d25215a37a15aa5e8",
-      "size": 8982
+      "sha256": "ece4e84cefb0b7a8f6107d2c74caf6f9134b31d5f8d35c2ee1a5d37d66455ec6",
+      "size": 8904
     },
     {
       "path": ".gitignore",
@@ -267,8 +267,8 @@
     },
     {
       "path": "config/kong-release-registry-contract.v1.json",
-      "sha256": "a60078b3545865bf18449060376aeca4aca9051f90257968c1a2640fc1fc4b20",
-      "size": 4380
+      "sha256": "4354dc5dc1aa615e2d70584b5ca3d59defdc44e7529e3405b69a81036549face",
+      "size": 4676
     },
     {
       "path": "config/kong-webhook-registry.v1.json",
@@ -362,7 +362,7 @@
     },
     {
       "path": "deploy/kong-production-standby/auth-middleware/requirements.txt",
-      "sha256": "382707083450f4da08872d52fcba56347052ee55cc3f5c6f4cc0541cc7a7c57d",
+      "sha256": "766ce9aedcbcf9c755197850f906db9c02d2ee5cc63881597c9599d2e3913b22",
       "size": 79
     },
     {
@@ -377,8 +377,8 @@
     },
     {
       "path": "deploy/kong-production-standby/compose.standby.yaml",
-      "sha256": "5d173703d302c430bd5715027fbeffd677b100b05fbc9684e597c157b74fdca0",
-      "size": 1703
+      "sha256": "bec3ca6c85dab1e659f35b3f1abdf341b62412ed79ee5eeff07912aa90dbc6ca",
+      "size": 1698
     },
     {
       "path": "deploy/kong-production-standby/identity-registry/001_certifier_scopes.sql",
@@ -1267,8 +1267,8 @@
     },
     {
       "path": "tests/test_release_supply_chain.py",
-      "sha256": "308a009c242e2702fc77f919c4af8d3094f17fb39eca059cd9c50cf730bf4f30",
-      "size": 24803
+      "sha256": "650a7b6d55d2ab6445b888a0a24d0f8300729b305dfe97baa4604bd69efecab6",
+      "size": 24990
     },
     {
       "path": "tests/test_runner_hardening.py",
@@ -1362,7 +1362,7 @@
     }
   ],
   "generated_at": "2026-08-26T21:10:25.642865+00:00",
-  "manifest_generation_id": "6228476cd83c75356c4ce5f2b0a928dda1df24806201c1a8f97dabbfd26b8043",
+  "manifest_generation_id": "2b607193d7036d7d8ae5012e4ed44b5812a484c17dc57316188c0f815b4bc7cd",
   "production_state_changed": false,
   "schema": "codestra.kong.repository-migration.v1",
   "source_files": [

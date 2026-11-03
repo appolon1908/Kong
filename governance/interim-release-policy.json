@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "policy_kind": "source_merge",
+  "repository": "appolon1908/Kong",
+  "authorization_date": "2026-11-02",
+  "required_checks": [
+    {
+      "context": "validate",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/validate.yml"
+    },
+    {
+      "context": "security",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/security.yml"
+    },
+    {
+      "context": "kong-config",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/kong-config.yml"
+    },
+    {
+      "context": "static-certification",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/kong-v3-certification.yml"
+    },
+    {
+      "context": "manifest-check",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/manifest-sync.yml"
+    },
+    {
+      "context": "certify",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/marketing-stage5-certification.yml"
+    },
+    {
+      "context": "release-preflight",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/release-preflight.yml"
+    },
+    {
+      "context": "verify",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/calling-contract-pin.yml"
+    }
+  ],
+  "replaces_contexts": [
+    "promotion-guard",
+    "control-plane-certification"
+  ],
+  "preserve": [
+    "other_required_checks",
+    "review_requirements",
+    "ref_conditions",
+    "bypass_actors",
+    "enforcement",
+    "force_push_protection",
+    "deletion_protection",
+    "deployment_authority"
+  ],
+  "production_activation_authorized": false,
+  "note": "GitHub rulesets remain the enforcement authority. This source-validation policy is not custom-controller certification or deployment authorization."
+}

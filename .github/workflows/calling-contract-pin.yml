@@ -2,14 +2,6 @@ name: calling-contract-pin
 
 on:
   pull_request:
-    paths:
-      - ".codestra/calling-contract.lock.json"
-      - ".github/workflows/calling-contract-pin.yml"
-      - "config/kong-calling-routes.v1.json"
-      - "deploy/kong/calling-policy.lua"
-      - "scripts/render_kong_calling_routes.py"
-      - "scripts/validate_kong_calling_policy.py"
-      - "tests/test_kong_calling_policy.py"
   push:
     branches: ["main"]
     paths:
